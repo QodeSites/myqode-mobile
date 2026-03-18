@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node -e \":*)",
+      "Bash(ls c:/Users/tech/Desktop/myqode-mobile/.babel*)",
+      "Bash(ls c:/Users/tech/Desktop/myqode-mobile/babel*)",
+      "Bash(node -e \"const d=require\\(''''/dev/stdin''''\\); console.log\\(d.babel || ''''no babel field''''\\)\")",
+      "Bash(find c:/Users/tech/Desktop/myqode-mobile/node_modules/nativewind -name babel*)",
+      "Bash(node -e \"require\\(''''@babel/core''''\\).transform\\('''''''', {filename: ''''node_modules/expo-router/entry.js'''', configFile: ''''./babel.config.js''''}\\)\")",
+      "Bash(find c:/Users/tech/Desktop/myqode-mobile/node_modules/react-native-css-interop -name babel*)",
+      "Bash(find c:UserstechDesktopmyqode-mobileapp -name *.tsx -type f)",
+      "Bash(find node_modules/@shopify/react-native-skia -name index.* -maxdepth 3)",
+      "Bash(grep -l Circle node_modules/@shopify/react-native-skia/lib/commonjs/*.js)",
+      "WebFetch(domain:www.cashfree.com)",
+      "WebFetch(domain:docs.cashfree.com)",
+      "WebFetch(domain:www.npmjs.com)",
+      "WebFetch(domain:github.com)",
+      "Bash(ls -la /c/Users/tech/Desktop/myqode-mobile/app/\\\\\\(tabs\\\\\\)/)",
+      "Bash(\"c:\\\\Users\\\\tech\\\\Desktop\\\\myqode-mobile\\\\.gitignore\":*)"
+    ]
+  }
+}

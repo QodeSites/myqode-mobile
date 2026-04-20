@@ -10,11 +10,13 @@ import {
   Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 import { Typography, cardShadow } from '@/constants/Typography';
 import { usePortfolioSnapshot } from '@/hooks/usePortfolio';
 import { SnapshotNode } from '@/api/portfolio';
+import { StrategySelector } from '@/components/ui/StrategySelector';
 import { formatINR } from '@/utils/formatCurrency';
 import { StatusPill } from '@/components/ui/StatusPill';
 import { formatDate } from '@/utils/formatDate';
@@ -55,11 +57,18 @@ function SnapshotRow({
           )}
           <View style={[styles.dot, { backgroundColor: dotColor }]} />
           <Text style={styles.nodeLabel} numberOfLines={1}>{node.label}</Text>
-          {node.type === 'account' && node.accountType && (
+          {node.type === 'account' && node.isClosed && (
+            <View style={styles.closedBadge}>
+              <Text style={styles.closedBadgeText}>Closed</Text>
+            </View>
+          )}
+          {node.type === 'account' && !node.isClosed && node.accountType && (
             <Text style={styles.accountType}>{node.accountType}</Text>
           )}
         </View>
-        <Text style={styles.nodeValue}>{formatINR(node.totalValue)}</Text>
+        <Text style={[styles.nodeValue, node.isClosed && styles.nodeValueClosed]}>
+          {node.isClosed ? '—' : formatINR(node.totalValue)}
+        </Text>
       </TouchableOpacity>
 
       {/* Account detail card at depth 2 */}
@@ -106,8 +115,80 @@ function DetailRow({ label, value }: { label: string; value: string }) {
   );
 }
 
+type ViewMode = 'family' | 'individual';
+
+function extractAccounts(node: SnapshotNode): SnapshotNode[] {
+  if (node.type === 'account') return [node];
+  return (node.children ?? []).flatMap(extractAccounts);
+}
+
+function AccountCard({ account }: { account: SnapshotNode }) {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <View style={styles.accountCard}>
+      <TouchableOpacity
+        style={styles.accountCardHeader}
+        onPress={() => setExpanded((v) => !v)}
+        activeOpacity={0.8}
+      >
+        <View style={styles.accountCardLeft}>
+          <View style={[styles.dot, {
+            backgroundColor: account.isClosed ? Colors.border : Colors.accentGold,
+            width: 10, height: 10, borderRadius: 5,
+          }]} />
+          <View style={{ flex: 1 }}>
+            <View style={styles.accountNameRow}>
+              <Text style={styles.accountCardLabel} numberOfLines={1}>{account.label}</Text>
+              {account.isClosed && (
+                <View style={styles.closedBadge}>
+                  <Text style={styles.closedBadgeText}>Closed</Text>
+                </View>
+              )}
+              {!account.isClosed && account.accountType && (
+                <Text style={styles.accountType}>{account.accountType}</Text>
+              )}
+            </View>
+            {account.id && (
+              <Text style={styles.accountCardId}>{account.id}</Text>
+            )}
+          </View>
+        </View>
+        <View style={styles.accountCardRight}>
+          <Text style={[styles.nodeValue, account.isClosed && styles.nodeValueClosed]}>
+            {account.isClosed ? '—' : formatINR(account.totalValue)}
+          </Text>
+          <Ionicons
+            name={expanded ? 'chevron-up' : 'chevron-down'}
+            size={14}
+            color={Colors.textSecondary}
+          />
+        </View>
+      </TouchableOpacity>
+      {expanded && (
+        <View style={styles.accountCardDetail}>
+          {account.clientId && <DetailRow label="Client ID" value={account.clientId} />}
+          {account.email && <DetailRow label="Email" value={account.email} />}
+          {account.mobile && <DetailRow label="Mobile" value={account.mobile} />}
+          {account.lastUpdated && (
+            <DetailRow label="Last Updated" value={formatDate(account.lastUpdated, 'medium')} />
+          )}
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Status</Text>
+            {account.status && <StatusPill status={account.status} />}
+          </View>
+          <View style={[styles.detailRow, { borderBottomWidth: 0 }]}>
+            <Text style={styles.detailLabel}>Portfolio Value</Text>
+            <Text style={styles.detailValueBold}>{formatINR(account.totalValue)}</Text>
+          </View>
+        </View>
+      )}
+    </View>
+  );
+}
+
 export default function SnapshotScreen() {
   const [search, setSearch] = useState('');
+  const [viewMode, setViewMode] = useState<ViewMode>('family');
   const [refreshing, setRefreshing] = useState(false);
   const snapshot = usePortfolioSnapshot();
 
@@ -118,21 +199,51 @@ export default function SnapshotScreen() {
   }, [snapshot]);
 
   const countActiveAccounts = (node: SnapshotNode): number => {
-    if (node.type === 'account') return node.status === 'active' ? 1 : 0;
+    if (node.type === 'account') return (!node.isClosed && node.status !== 'closed') ? 1 : 0;
     return (node.children ?? []).reduce((sum, c) => sum + countActiveAccounts(c), 0);
   };
 
+  const calcActiveTotal = (node: SnapshotNode): number => {
+    if (node.type === 'account') return node.isClosed ? 0 : node.totalValue;
+    return (node.children ?? []).reduce((sum, c) => sum + calcActiveTotal(c), 0);
+  };
+
   const activeCount = snapshot.data ? countActiveAccounts(snapshot.data) : 0;
+  const activeTotal = snapshot.data ? calcActiveTotal(snapshot.data) : 0;
+
+  const allAccounts = snapshot.data ? extractAccounts(snapshot.data) : [];
+  const filteredAccounts = allAccounts.filter((a) =>
+    !search || a.label.toLowerCase().includes(search.toLowerCase()) || a.id?.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <View style={styles.header}>
         <View style={styles.titleRow}>
           <Text style={styles.title}>My Portfolio Values</Text>
-          <View style={styles.ownerPill}>
-            <Text style={styles.ownerPillText}>Owner Portfolio</Text>
+          <View style={styles.headerActions}>
+            <StrategySelector />
           </View>
         </View>
+
+        {/* View toggle */}
+        <View style={styles.toggleRow}>
+          <TouchableOpacity
+            style={[styles.toggleBtn, viewMode === 'family' && styles.toggleBtnActive]}
+            onPress={() => setViewMode('family')}
+          >
+            <Ionicons name="git-network-outline" size={13} color={viewMode === 'family' ? Colors.white : Colors.textSecondary} />
+            <Text style={[styles.toggleBtnText, viewMode === 'family' && styles.toggleBtnTextActive]}>Family View</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.toggleBtn, viewMode === 'individual' && styles.toggleBtnActive]}
+            onPress={() => setViewMode('individual')}
+          >
+            <Ionicons name="person-outline" size={13} color={viewMode === 'individual' ? Colors.white : Colors.textSecondary} />
+            <Text style={[styles.toggleBtnText, viewMode === 'individual' && styles.toggleBtnTextActive]}>Individual</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* Search */}
         <View style={styles.searchRow}>
           <View style={styles.searchBar}>
@@ -144,6 +255,11 @@ export default function SnapshotScreen() {
               placeholder="Search accounts..."
               placeholderTextColor={Colors.textSecondary}
             />
+            {search.length > 0 && (
+              <TouchableOpacity onPress={() => setSearch('')}>
+                <Ionicons name="close-circle" size={16} color={Colors.textSecondary} />
+              </TouchableOpacity>
+            )}
           </View>
         </View>
       </View>
@@ -158,26 +274,60 @@ export default function SnapshotScreen() {
           />
         }
       >
-        <View style={styles.treeContainer}>
-          {snapshot.isLoading && (
-            <Text style={styles.loadingText}>Loading portfolio data...</Text>
-          )}
-          {snapshot.isError && (
-            <TouchableOpacity onPress={() => snapshot.refetch()} style={styles.retryRow}>
-              <Text style={styles.errorText}>Failed to load. Tap to retry.</Text>
-            </TouchableOpacity>
-          )}
-          {snapshot.data && <SnapshotRow node={snapshot.data} depth={0} />}
-        </View>
+        {snapshot.isLoading && (
+          <Text style={styles.loadingText}>Loading portfolio data...</Text>
+        )}
+        {snapshot.isError && (
+          <TouchableOpacity onPress={() => snapshot.refetch()} style={styles.retryRow}>
+            <Text style={styles.errorText}>Failed to load. Tap to retry.</Text>
+          </TouchableOpacity>
+        )}
+
+        {/* Family View */}
+        {viewMode === 'family' && snapshot.data && (
+          <View style={styles.treeContainer}>
+            <SnapshotRow node={snapshot.data} depth={0} />
+          </View>
+        )}
+
+        {/* Individual View */}
+        {viewMode === 'individual' && (
+          <View style={styles.individualContainer}>
+            {filteredAccounts.length === 0 && !snapshot.isLoading && (
+              <Text style={styles.loadingText}>No accounts found.</Text>
+            )}
+            {filteredAccounts.map((acc) => (
+              <AccountCard key={acc.id} account={acc} />
+            ))}
+          </View>
+        )}
 
         {/* Summary card */}
         {snapshot.data && (
           <View style={styles.summaryCard}>
-            <Text style={styles.summaryLabel}>Total Portfolio Value</Text>
-            <Text style={styles.summaryValue}>{formatINR(snapshot.data.totalValue)}</Text>
-            <Text style={styles.summaryAccounts}>{activeCount} Active Accounts</Text>
+            <Text style={styles.summaryLabel}>Active Portfolio Value</Text>
+            <Text style={styles.summaryValue}>{formatINR(activeTotal)}</Text>
+            <Text style={styles.summaryAccounts}>{activeCount} Active Account{activeCount !== 1 ? 's' : ''}</Text>
           </View>
         )}
+
+        {/* Family Account Mapping */}
+        <TouchableOpacity
+          style={styles.familyBtn}
+          onPress={() => router.push('/(tabs)/experience/family' as any)}
+          activeOpacity={0.85}
+        >
+          <View style={styles.familyBtnLeft}>
+            <View style={styles.familyBtnIcon}>
+              <Ionicons name="people-outline" size={20} color={Colors.primaryDark} />
+            </View>
+            <View>
+              <Text style={styles.familyBtnTitle}>Family Account Mapping</Text>
+              <Text style={styles.familyBtnSubtitle}>View group structure, owners & account details</Text>
+            </View>
+          </View>
+          <Ionicons name="chevron-forward" size={16} color={Colors.textSecondary} />
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
@@ -199,8 +349,13 @@ const styles = StyleSheet.create({
   titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    justifyContent: 'space-between',
     marginBottom: 12,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   title: {
     ...Typography.H1,
@@ -216,6 +371,87 @@ const styles = StyleSheet.create({
     ...Typography.Caption,
     color: Colors.white,
     fontFamily: 'Inter_600SemiBold',
+  },
+  toggleRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 10,
+  },
+  toggleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.background,
+  },
+  toggleBtnActive: {
+    backgroundColor: Colors.primaryDark,
+    borderColor: Colors.primaryDark,
+  },
+  toggleBtnText: {
+    ...Typography.Caption,
+    color: Colors.textSecondary,
+    fontFamily: 'Inter_600SemiBold',
+  },
+  toggleBtnTextActive: {
+    color: Colors.white,
+  },
+  individualContainer: {
+    padding: 16,
+    gap: 10,
+  },
+  accountCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    overflow: 'hidden',
+    ...cardShadow,
+  },
+  accountCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 14,
+    gap: 10,
+  },
+  accountCardLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+  },
+  accountNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flexWrap: 'wrap',
+  },
+  accountCardLabel: {
+    ...Typography.Body,
+    color: Colors.textPrimary,
+    fontFamily: 'Inter_600SemiBold',
+  },
+  accountCardId: {
+    ...Typography.Caption,
+    color: Colors.textSecondary,
+    marginTop: 2,
+  },
+  accountCardRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  accountCardDetail: {
+    backgroundColor: Colors.background,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
   },
   searchRow: {
     flexDirection: 'row',
@@ -282,6 +518,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
+  },
+  closedBadge: {
+    backgroundColor: '#E5E7EB',
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  closedBadgeText: {
+    ...Typography.Caption,
+    color: '#6B7280',
+    fontFamily: 'Inter_600SemiBold',
+  },
+  nodeValueClosed: {
+    color: Colors.textSecondary,
   },
   nodeValue: {
     ...Typography.BodySmall,
@@ -356,5 +606,44 @@ const styles = StyleSheet.create({
     ...Typography.BodySmall,
     color: 'rgba(255,255,255,0.8)',
     fontFamily: 'Inter_500Medium',
+  },
+  familyBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: Colors.surface,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    marginHorizontal: 16,
+    marginBottom: 24,
+    padding: 14,
+    ...cardShadow,
+  },
+  familyBtnLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+  },
+  familyBtnIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    backgroundColor: Colors.background,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  familyBtnTitle: {
+    ...Typography.Body,
+    color: Colors.textPrimary,
+    fontFamily: 'Inter_600SemiBold',
+  },
+  familyBtnSubtitle: {
+    ...Typography.Caption,
+    color: Colors.textSecondary,
+    marginTop: 2,
   },
 });

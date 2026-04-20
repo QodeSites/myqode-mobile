@@ -45,7 +45,7 @@ export default function AccountMappingScreen() {
           <View style={styles.noteCard}>
             <Text style={styles.noteTitle}>Need Help with Mapping?</Text>
             <Text style={styles.noteText}>
-              Contact our IR team at ir@qodeinvest.com or via WhatsApp for assistance with account mapping.
+              Contact our IR team at investor.relations@qodeinvest.com or via WhatsApp for assistance with account mapping.
             </Text>
           </View>
         </View>

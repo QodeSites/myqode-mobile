@@ -1,11 +1,10 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
-  RefreshControl,
   ActivityIndicator,
   Linking,
 } from 'react-native';
@@ -14,37 +13,23 @@ import * as WebBrowser from 'expo-web-browser';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 import { Typography, cardShadow } from '@/constants/Typography';
-import { useDocumentCategories, useDocumentFiles } from '@/hooks/useDocuments';
-import { formatDate } from '@/utils/formatDate';
-import { DocumentCategory, DocumentFile } from '@/api/documents';
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-} from 'react-native-reanimated';
+import { useDocumentFiles } from '@/hooks/useDocuments';
+import { DOCUMENT_CATEGORIES, DocumentCategory, DocumentFile } from '@/api/documents';
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function formatDate(iso: string): string {
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '';
+  return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+}
 
 function CategoryAccordion({ category }: { category: DocumentCategory }) {
   const [expanded, setExpanded] = useState(false);
-  const height = useSharedValue(0);
-  const opacity = useSharedValue(0);
-
-  const toggle = () => {
-    if (expanded) {
-      height.value = withTiming(0, { duration: 200 });
-      opacity.value = withTiming(0, { duration: 150 });
-    } else {
-      height.value = withTiming(300, { duration: 250 });
-      opacity.value = withTiming(1, { duration: 200 });
-    }
-    setExpanded((e) => !e);
-  };
-
-  const animStyle = useAnimatedStyle(() => ({
-    height: height.value,
-    overflow: 'hidden',
-    opacity: opacity.value,
-  }));
-
   const { data: files, isLoading } = useDocumentFiles(expanded ? category.id : null);
 
   const openFile = async (file: DocumentFile) => {
@@ -53,108 +38,79 @@ function CategoryAccordion({ category }: { category: DocumentCategory }) {
     }
   };
 
+  const fileCount = files?.length ?? 0;
+
   return (
     <View style={styles.accordion}>
-      <TouchableOpacity style={styles.accordionHeader} onPress={toggle} activeOpacity={0.8}>
+      <TouchableOpacity
+        style={styles.accordionHeader}
+        onPress={() => setExpanded((e) => !e)}
+        activeOpacity={0.8}
+      >
         <View style={styles.accordionLeft}>
           <View style={styles.catIcon}>
             <Ionicons name="document-text-outline" size={16} color={Colors.primaryDark} />
           </View>
           <Text style={styles.catName}>{category.name}</Text>
-          {category.count > 0 && (
+          {expanded && fileCount > 0 && (
             <View style={styles.countBadge}>
-              <Text style={styles.countText}>{category.count}</Text>
+              <Text style={styles.countText}>{fileCount}</Text>
             </View>
           )}
         </View>
-        <View style={styles.accordionRight}>
-          {category.count > 0 && !expanded && (
-            <Text style={styles.viewFilesText}>View Files</Text>
-          )}
-          <Ionicons
-            name={expanded ? 'chevron-up' : 'chevron-down'}
-            size={16}
-            color={Colors.textSecondary}
-          />
-        </View>
+        <Ionicons
+          name={expanded ? 'chevron-up' : 'chevron-down'}
+          size={16}
+          color={Colors.textSecondary}
+        />
       </TouchableOpacity>
 
-      <Animated.View style={animStyle}>
+      {expanded && (
         <View style={styles.fileList}>
           {isLoading && (
-            <ActivityIndicator
-              size="small"
-              color={Colors.primaryDark}
-              style={styles.fileLoader}
-            />
+            <ActivityIndicator size="small" color={Colors.primaryDark} style={styles.fileLoader} />
           )}
-          {files && files.length === 0 && (
+
+          {!isLoading && files && files.length === 0 && (
             <View style={styles.emptyFiles}>
               <Ionicons name="folder-open-outline" size={24} color={Colors.border} />
-              <Text style={styles.emptyFilesText}>No files found</Text>
+              <Text style={styles.emptyFilesText}>No files in this category</Text>
             </View>
           )}
-          {files &&
-            files.map((file) => (
-              <TouchableOpacity
-                key={file.id}
-                style={styles.fileRow}
-                onPress={() => openFile(file)}
-                activeOpacity={0.7}
-              >
-                <View style={styles.fileIcon}>
-                  <Ionicons name="document-outline" size={16} color={Colors.accentGreen} />
-                </View>
-                <View style={styles.fileInfo}>
-                  <Text style={styles.fileName} numberOfLines={1}>
-                    {file.name}
-                  </Text>
-                  <Text style={styles.fileDate}>{formatDate(file.date, 'medium')}</Text>
-                </View>
-                <TouchableOpacity onPress={() => openFile(file)} style={styles.downloadIcon}>
-                  <Ionicons name="download-outline" size={16} color={Colors.primaryDark} />
-                </TouchableOpacity>
-              </TouchableOpacity>
-            ))}
+
+          {files && files.map((file) => (
+            <TouchableOpacity
+              key={file.key}
+              style={styles.fileRow}
+              onPress={() => openFile(file)}
+              activeOpacity={0.7}
+            >
+              <View style={styles.fileIcon}>
+                <Ionicons name="document-outline" size={16} color={Colors.accentGreen} />
+              </View>
+              <View style={styles.fileInfo}>
+                <Text style={styles.fileName} numberOfLines={2}>
+                  {file.filename}
+                </Text>
+                <Text style={styles.fileMeta}>
+                  {formatDate(file.lastModified)} · {formatBytes(file.size)}
+                </Text>
+              </View>
+              <View style={styles.downloadIcon}>
+                <Ionicons name="open-outline" size={16} color={Colors.primaryDark} />
+              </View>
+            </TouchableOpacity>
+          ))}
         </View>
-      </Animated.View>
+      )}
     </View>
   );
 }
 
 export default function DocumentVaultScreen() {
-  const [refreshing, setRefreshing] = useState(false);
-  const { data: categories, isLoading, isError, refetch } = useDocumentCategories();
-
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    await refetch();
-    setRefreshing(false);
-  }, [refetch]);
-
-  // Fallback categories if API fails
-  const fallbackCategories: DocumentCategory[] = [
-    { id: 'pms-agreement', name: 'PMS Agreement', count: 0 },
-    { id: 'account-opening', name: 'Account Opening Documents', count: 8 },
-    { id: 'cml', name: 'CML', count: 1 },
-    { id: 'tax-documents', name: 'Tax Documents', count: 0 },
-    { id: 'quarterly-statements', name: 'Quarterly Statements', count: 0 },
-  ];
-
-  const displayCategories = categories ?? (isError ? fallbackCategories : []);
-
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={Colors.accentGreen}
-          />
-        }
-      >
+      <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.title}>Account Documents</Text>
@@ -164,19 +120,13 @@ export default function DocumentVaultScreen() {
         </View>
 
         <View style={styles.content}>
-          {/* Document list */}
-          {isLoading ? (
-            <ActivityIndicator
-              color={Colors.primaryDark}
-              style={styles.mainLoader}
-            />
-          ) : (
-            <View style={styles.accordionList}>
-              {displayCategories.map((cat) => (
-                <CategoryAccordion key={cat.id} category={cat} />
-              ))}
-            </View>
-          )}
+          <View style={styles.accordionList}>
+            {DOCUMENT_CATEGORIES.map((cat, i) => (
+              <View key={cat.id} style={i < DOCUMENT_CATEGORIES.length - 1 && styles.divider}>
+                <CategoryAccordion category={cat} />
+              </View>
+            ))}
+          </View>
 
           {/* Info card */}
           <View style={styles.infoCard}>
@@ -187,9 +137,7 @@ export default function DocumentVaultScreen() {
                 Can't find what you're looking for? Our IR team can help you access any document.
               </Text>
               <TouchableOpacity
-                onPress={() =>
-                  Linking.openURL('mailto:ir@qodeinvest.com?subject=Document Request')
-                }
+                onPress={() => Linking.openURL('mailto:investor.relations@qodeinvest.com?subject=Document Request')}
                 style={styles.infoLink}
               >
                 <Text style={styles.infoLinkText}>Contact IR Team →</Text>
@@ -220,7 +168,6 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   content: { padding: 16, gap: 16 },
-  mainLoader: { marginTop: 40 },
   accordionList: {
     backgroundColor: Colors.surface,
     borderRadius: 12,
@@ -229,10 +176,11 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     ...cardShadow,
   },
-  accordion: {
+  divider: {
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
   },
+  accordion: {},
   accordionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -266,8 +214,9 @@ const styles = StyleSheet.create({
   countBadge: {
     backgroundColor: Colors.primaryDark,
     borderRadius: 999,
-    width: 22,
+    minWidth: 22,
     height: 22,
+    paddingHorizontal: 5,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -276,23 +225,12 @@ const styles = StyleSheet.create({
     color: Colors.white,
     fontFamily: 'Inter_700Bold',
   },
-  accordionRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  viewFilesText: {
-    ...Typography.Caption,
-    color: Colors.accentGreen,
-    fontFamily: 'Inter_600SemiBold',
-  },
   fileList: {
     backgroundColor: Colors.background,
     paddingHorizontal: 16,
     paddingVertical: 8,
-    minHeight: 60,
   },
-  fileLoader: { marginVertical: 16 },
+  fileLoader: { marginVertical: 20 },
   emptyFiles: {
     alignItems: 'center',
     paddingVertical: 24,
@@ -326,14 +264,12 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
     fontFamily: 'Inter_500Medium',
   },
-  fileDate: {
+  fileMeta: {
     ...Typography.Caption,
     color: Colors.textSecondary,
     marginTop: 2,
   },
-  downloadIcon: {
-    padding: 6,
-  },
+  downloadIcon: { padding: 6 },
   infoCard: {
     backgroundColor: Colors.surface,
     borderRadius: 12,
@@ -344,27 +280,15 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     ...cardShadow,
   },
-  infoAccent: {
-    width: 4,
-    backgroundColor: Colors.accentGold,
-  },
-  infoBody: {
-    flex: 1,
-    padding: 14,
-    gap: 4,
-  },
-  infoTitle: {
-    ...Typography.H3,
-    color: Colors.textPrimary,
-  },
+  infoAccent: { width: 4, backgroundColor: Colors.accentGold },
+  infoBody: { flex: 1, padding: 14, gap: 4 },
+  infoTitle: { ...Typography.H3, color: Colors.textPrimary },
   infoText: {
     ...Typography.BodySmall,
     color: Colors.textSecondary,
     lineHeight: 18,
   },
-  infoLink: {
-    marginTop: 6,
-  },
+  infoLink: { marginTop: 6 },
   infoLinkText: {
     ...Typography.BodySmall,
     color: Colors.accentGreen,

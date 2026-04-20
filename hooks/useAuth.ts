@@ -2,6 +2,11 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { authApi, LoginPayload } from '@/api/auth';
 import { useAuthStore } from '@/store/authStore';
 import { router } from 'expo-router';
+import {
+  registerForPushNotifications,
+  deregisterPushNotification,
+  getCachedPushToken,
+} from '@/utils/pushNotifications';
 
 export function useLogin() {
   const setToken = useAuthStore((s) => s.setToken);
@@ -10,11 +15,15 @@ export function useLogin() {
   return useMutation({
     mutationFn: (payload: LoginPayload) => authApi.login(payload),
     onSuccess: async (data) => {
-      console.log('[AUTH] login response:', JSON.stringify(data, null, 2));
-      await authApi.storeToken(data.token);
+      await Promise.all([
+        authApi.storeToken(data.token),
+        authApi.cacheUser(data.user),
+      ]);
       setToken(data.token);
       setUser(data.user);
       router.replace('/(tabs)/portfolio');
+      // Register push token after auth state is set (non-blocking)
+      registerForPushNotifications().catch(() => {});
     },
   });
 }
@@ -23,7 +32,12 @@ export function useLogout() {
   const logout = useAuthStore((s) => s.logout);
 
   return useMutation({
-    mutationFn: () => authApi.logout(),
+    mutationFn: async () => {
+      // Deregister push token before clearing the auth token so the DELETE
+      // request still has a valid Bearer token to authenticate with.
+      await deregisterPushNotification(getCachedPushToken());
+      return authApi.logout();
+    },
     onSettled: () => {
       logout();
       router.replace('/(auth)/login');
@@ -39,8 +53,8 @@ export function useCurrentUser() {
     queryKey: ['auth', 'me'],
     queryFn: async () => {
       const user = await authApi.me();
-      console.log('[AUTH] /me response:', JSON.stringify(user, null, 2));
       setUser(user);
+      await authApi.cacheUser(user);
       return user;
     },
     enabled: !!token,

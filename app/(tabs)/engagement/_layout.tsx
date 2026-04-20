@@ -12,6 +12,8 @@ export default function EngagementLayout() {
       <Stack.Screen name="index" />
       <Stack.Screen name="referral" />
       <Stack.Screen name="insights" />
+      <Stack.Screen name="feedback" />
+      <Stack.Screen name="testimonial" />
     </Stack>
   );
 }

@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { Colors } from '@/constants/Colors';
 import { Typography, cardShadow } from '@/constants/Typography';
 import { CardContainer } from '@/components/ui/CardContainer';
@@ -79,6 +80,30 @@ export default function PhilosophyScreen() {
               ))}
             </View>
           </View>
+
+          {/* Explore More */}
+          <Text style={styles.exploreLabel}>EXPLORE MORE</Text>
+          {[
+            { icon: 'pie-chart-outline' as const, title: 'Strategy Snapshot', desc: 'Our four evidence-based investment strategies explained.', route: '/(tabs)/about/strategy' },
+            { icon: 'school-outline' as const, title: 'Qode Foundation', desc: 'Research papers, investment philosophy, and educational content.', route: '/(tabs)/about/foundation' },
+            { icon: 'people-outline' as const, title: 'Meet the Team', desc: 'The fund managers and research team behind Qode.', route: '/(tabs)/about/team' },
+          ].map((item, i) => (
+            <TouchableOpacity
+              key={i}
+              style={styles.navCard}
+              onPress={() => router.push(item.route as any)}
+              activeOpacity={0.8}
+            >
+              <View style={styles.navIconBox}>
+                <Ionicons name={item.icon} size={20} color={Colors.primaryDark} />
+              </View>
+              <View style={styles.navText}>
+                <Text style={styles.navTitle}>{item.title}</Text>
+                <Text style={styles.navDesc}>{item.desc}</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color={Colors.textSecondary} />
+            </TouchableOpacity>
+          ))}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -166,4 +191,35 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_600SemiBold',
     textAlign: 'center',
   },
+  exploreLabel: {
+    ...Typography.Caption,
+    color: Colors.textSecondary,
+    fontFamily: 'Inter_600SemiBold',
+    letterSpacing: 0.8,
+    marginBottom: -8,
+  },
+  navCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    padding: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    ...cardShadow,
+  },
+  navIconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    backgroundColor: Colors.background,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  navText: { flex: 1 },
+  navTitle: { ...Typography.H3, color: Colors.textPrimary },
+  navDesc: { ...Typography.Caption, color: Colors.textSecondary, marginTop: 3, lineHeight: 15 },
 });

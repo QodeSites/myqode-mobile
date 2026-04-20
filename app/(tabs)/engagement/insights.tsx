@@ -25,8 +25,8 @@ function PDFThumbnailCard({
   bgColor: string;
 }) {
   const openPDF = async () => {
-    if (item.pdfUrl) {
-      await WebBrowser.openBrowserAsync(item.pdfUrl);
+    if (item.url) {
+      await WebBrowser.openBrowserAsync(item.url);
     }
   };
 
@@ -44,10 +44,7 @@ function PDFThumbnailCard({
           <Text style={styles.pdfBadgeText}>PDF</Text>
         </View>
       </TouchableOpacity>
-      <Text style={styles.pdfMonth}>{item.monthYear}</Text>
-      {item.subtitle && (
-        <Text style={styles.pdfSubtitle} numberOfLines={1}>{item.subtitle}</Text>
-      )}
+      <Text style={styles.pdfMonth}>{item.title}</Text>
       <TouchableOpacity onPress={openPDF} style={styles.pdfLink}>
         <Text style={styles.pdfLinkText}>Open PDF →</Text>
       </TouchableOpacity>
@@ -117,7 +114,7 @@ export default function InsightsScreen() {
               data={newsletters.data}
               horizontal
               showsHorizontalScrollIndicator={false}
-              keyExtractor={(item) => item.id}
+              keyExtractor={(item) => item.key}
               contentContainerStyle={styles.horizontalList}
               renderItem={({ item }) => (
                 <PDFThumbnailCard item={item} bgColor={Colors.primaryDark} />
@@ -142,7 +139,7 @@ export default function InsightsScreen() {
               data={perspectives.data}
               horizontal
               showsHorizontalScrollIndicator={false}
-              keyExtractor={(item) => item.id}
+              keyExtractor={(item) => item.key}
               contentContainerStyle={styles.horizontalList}
               renderItem={({ item }) => (
                 <PDFThumbnailCard item={item} bgColor={Colors.strategyQGF} />

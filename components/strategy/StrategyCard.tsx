@@ -1,14 +1,15 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { Strategy } from '@/api/about';
 
-const strategyColors: Record<string, string> = {
-  QAW: Colors.strategyQAW,
-  QTF: Colors.strategyQTF,
-  QGF: Colors.strategyQGF,
-  QFH: Colors.strategyQFH,
+const STRATEGY_THEME: Record<string, { color: string; accent: string }> = {
+  QAW: { color: Colors.strategyQAW, accent: Colors.strategyQAWAccent },
+  QTF: { color: Colors.strategyQTF, accent: Colors.strategyQTFAccent },
+  QGF: { color: Colors.strategyQGF, accent: Colors.strategyQGFAccent },
+  QFH: { color: Colors.strategyQFH, accent: Colors.strategyQFHAccent },
 };
 
 interface StrategyCardProps {
@@ -17,20 +18,30 @@ interface StrategyCardProps {
 }
 
 export function StrategyCard({ strategy, onPress }: StrategyCardProps) {
-  const bgColor = strategyColors[strategy.id] ?? Colors.primaryDark;
+  const theme = STRATEGY_THEME[strategy.id] ?? { color: Colors.primaryDark, accent: Colors.primaryMid };
 
   return (
     <TouchableOpacity
-      style={[styles.card, { backgroundColor: bgColor }]}
+      style={styles.card}
       onPress={() => onPress?.(strategy.id)}
       activeOpacity={0.9}
     >
-      {/* Decorative rule */}
-      <View style={styles.rule} />
+      {/* Gradient background from left (color) to right (accent) */}
+      <LinearGradient
+        colors={[theme.color, theme.accent]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={styles.gradientBackground}
+        pointerEvents="none"
+      />
+
+      {/* Decorative dot pattern overlay */}
+      <View style={styles.dotPattern} pointerEvents="none" />
 
       <View style={styles.content}>
+        {/* Header bar + title */}
         <View style={styles.header}>
-          <Text style={styles.id}>{strategy.id}</Text>
+          <View style={[styles.rule, { backgroundColor: 'rgba(255,255,255,0.5)' }]} />
           <Text style={styles.name}>{strategy.fullName}</Text>
         </View>
 
@@ -41,7 +52,7 @@ export function StrategyCard({ strategy, onPress }: StrategyCardProps) {
         {/* Tag pills */}
         <View style={styles.tags}>
           {strategy.tags.slice(0, 4).map((tag, i) => (
-            <View key={i} style={styles.tag}>
+            <View key={i} style={[styles.tag, { borderColor: theme.color }]}>
               <Text style={styles.tagText}>{tag}</Text>
             </View>
           ))}
@@ -53,44 +64,52 @@ export function StrategyCard({ strategy, onPress }: StrategyCardProps) {
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 12,
-    height: 160,
+    borderRadius: 16,
+    minHeight: 172,
     marginBottom: 12,
     overflow: 'hidden',
+    position: 'relative',
   },
-  rule: {
-    height: 3,
-    backgroundColor: 'rgba(255,255,255,0.3)',
-    marginHorizontal: 16,
-    marginTop: 12,
-    borderRadius: 2,
+  gradientBackground: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  dotPattern: {
+    position: 'absolute',
+    inset: 0,
+    opacity: 0.04,
+    backgroundColor: 'transparent',
   },
   content: {
     flex: 1,
-    padding: 16,
-    paddingTop: 10,
+    padding: 18,
+    paddingTop: 14,
+    gap: 8,
     justifyContent: 'space-between',
   },
   header: {
-    gap: 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
-  id: {
-    ...Typography.Caption,
-    color: 'rgba(255,255,255,0.65)',
-    letterSpacing: 1.5,
-    textTransform: 'uppercase',
+  rule: {
+    width: 28,
+    height: 3,
+    borderRadius: 2,
   },
   name: {
     ...Typography.H3,
     color: Colors.white,
     fontFamily: 'Inter_700Bold',
+    flex: 1,
   },
   description: {
     ...Typography.Caption,
-    color: 'rgba(255,255,255,0.80)',
-    lineHeight: 15,
-    flex: 1,
-    marginVertical: 6,
+    color: 'rgba(255,255,255,0.85)',
+    lineHeight: 16,
   },
   tags: {
     flexDirection: 'row',
@@ -98,13 +117,16 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   tag: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.18)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255,255,255,0.85)',
+    borderWidth: 1,
   },
   tagText: {
     ...Typography.Caption,
-    color: 'rgba(255,255,255,0.9)',
+    color: Colors.textPrimary,
+    fontFamily: 'Inter_500Medium',
+    fontSize: 11,
   },
 });

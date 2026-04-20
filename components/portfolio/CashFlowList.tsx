@@ -64,7 +64,7 @@ export function CashFlowList({ data }: CashFlowListProps) {
         <View style={styles.summaryItem}>
           <Text style={styles.summaryLabel}>Total Outflow</Text>
           <Text style={[styles.summaryValue, { color: Colors.negative }]}>
-            −{formatINR(totalOutflow)}
+            −{formatINR(Math.abs(totalOutflow))}
           </Text>
         </View>
         <View style={styles.summaryDivider} />

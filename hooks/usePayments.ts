@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { paymentsApi, CreateOrderPayload } from '@/api/payments';
+import { paymentsApi, CreateOrderPayload, VerifyOrderResponse, VerifySipResponse } from '@/api/payments';
 import { useAuthStore } from '@/store/authStore';
 
 export function useInvestmentStatus() {
@@ -31,6 +31,18 @@ export function useVerifyOrder() {
     mutationFn: (orderId: string) => paymentsApi.verifyOrder(orderId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['payments', 'investment-status'] });
+    },
+  });
+}
+
+export function useVerifySip() {
+  const queryClient = useQueryClient();
+
+  return useMutation<VerifySipResponse, Error, string>({
+    mutationFn: (subscriptionId: string) => paymentsApi.verifySip(subscriptionId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['payments', 'investment-status'] });
+      queryClient.invalidateQueries({ queryKey: ['services', 'transactions'] });
     },
   });
 }

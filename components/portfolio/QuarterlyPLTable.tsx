@@ -1,10 +1,11 @@
 import React from 'react';
-import { ScrollView, View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { ScrollView, View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { QuarterlyPL } from '@/api/portfolio';
 import { formatPercent } from '@/utils/formatPercent';
 import { formatINR } from '@/utils/formatCurrency';
+import { isSmallDevice, isTablet } from '@/constants/Responsive';
 
 interface QuarterlyPLTableProps {
   data: QuarterlyPL[];
@@ -12,16 +13,21 @@ interface QuarterlyPLTableProps {
   onToggleMode: (mode: 'percent' | 'rupees') => void;
 }
 
-const YEAR_WIDTH = 56;
-const ROW_HEIGHT = 36;
+const YEAR_WIDTH = isTablet ? 72 : isSmallDevice ? 48 : 56;
+const ROW_HEIGHT = isSmallDevice ? 32 : 36;
+// Same sizing rationale as MonthlyPLTable — quarterly values accumulate
+// 3 months so INR amounts can be proportionally larger
+const PCT_CELL = isTablet ? 96 : isSmallDevice ? 72 : 80;
+const INR_CELL = isTablet ? 136 : isSmallDevice ? 104 : 120;
 
 function PLCell({ value, mode }: { value: number | null | undefined; mode: 'percent' | 'rupees' }) {
   if (value === null || value === undefined) {
-    return <Text style={styles.dash} numberOfLines={1}>-</Text>;
+    return <Text style={styles.dash} allowFontScaling={false}>-</Text>;
   }
   const color = value > 0 ? Colors.positive : value < 0 ? Colors.negative : Colors.textPrimary;
-  const display = mode === 'percent' ? formatPercent(value) : formatINR(value);
-  return <Text style={[styles.valueCell, { color }]} numberOfLines={1}>{display}</Text>;
+  const display = mode === 'percent' ? formatPercent(value) : formatINR(value, 0);
+  // No numberOfLines — full value must always be visible
+  return <Text style={[styles.valueCell, { color }]} allowFontScaling={false}>{display}</Text>;
 }
 
 export function QuarterlyPLTable({ data, mode, onToggleMode }: QuarterlyPLTableProps) {
@@ -48,12 +54,12 @@ export function QuarterlyPLTable({ data, mode, onToggleMode }: QuarterlyPLTableP
         <View style={styles.frozenCol}>
           {/* Frozen header */}
           <View style={styles.frozenHeaderCell}>
-            <Text style={styles.headerText} numberOfLines={1}>YEAR</Text>
+            <Text style={styles.headerText} numberOfLines={1} allowFontScaling={false}>YEAR</Text>
           </View>
           {/* Frozen data rows */}
           {data.map((row, i) => (
             <View key={i} style={[styles.frozenDataCell, i % 2 === 0 && styles.evenRow]}>
-              <Text style={styles.yearText} numberOfLines={1}>{row.year}</Text>
+              <Text style={styles.yearText} numberOfLines={1} allowFontScaling={false}>{row.year}</Text>
             </View>
           ))}
         </View>
@@ -64,8 +70,8 @@ export function QuarterlyPLTable({ data, mode, onToggleMode }: QuarterlyPLTableP
             {/* Scrollable header */}
             <View style={[styles.row, styles.headerRow]}>
               {(['Q1', 'Q2', 'Q3', 'Q4', 'TOTAL'] as const).map((h) => (
-                <View key={h} style={styles.cell}>
-                  <Text style={styles.headerText} numberOfLines={1}>{h}</Text>
+                <View key={h} style={[styles.cell, { width: mode === 'rupees' ? INR_CELL : PCT_CELL }]}>
+                  <Text style={styles.headerText} numberOfLines={1} allowFontScaling={false}>{h}</Text>
                 </View>
               ))}
             </View>
@@ -73,7 +79,7 @@ export function QuarterlyPLTable({ data, mode, onToggleMode }: QuarterlyPLTableP
             {data.map((row, i) => (
               <View key={i} style={[styles.row, i % 2 === 0 && styles.evenRow]}>
                 {(['q1', 'q2', 'q3', 'q4', 'total'] as const).map((q) => (
-                  <View key={q} style={styles.cell}>
+                  <View key={q} style={[styles.cell, { width: mode === 'rupees' ? INR_CELL : PCT_CELL }]}>
                     <PLCell value={row[q]} mode={mode} />
                   </View>
                 ))}
@@ -94,11 +100,13 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   toggleBtn: {
+    height: 32,
     paddingHorizontal: 12,
-    paddingVertical: 5,
     borderRadius: 6,
     borderWidth: 1,
     borderColor: Colors.border,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   toggleActive: {
     backgroundColor: Colors.primaryDark,
@@ -118,6 +126,9 @@ const styles = StyleSheet.create({
   frozenCol: {
     width: YEAR_WIDTH,
     zIndex: 1,
+    // Android: zIndex alone does not create stacking — elevation is also required
+    // so that the frozen column renders above the horizontally scrolling content
+    elevation: Platform.OS === 'android' ? 2 : 0,
   },
   frozenHeaderCell: {
     height: ROW_HEIGHT,
@@ -129,14 +140,15 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 6,
   },
   frozenDataCell: {
-    height: ROW_HEIGHT,
+    minHeight: ROW_HEIGHT,
     paddingHorizontal: 8,
+    paddingVertical: 8,
     justifyContent: 'center',
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: ROW_HEIGHT,
+    minHeight: ROW_HEIGHT,
   },
   headerRow: {
     backgroundColor: Colors.primaryDark,
@@ -146,11 +158,11 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.02)',
   },
   cell: {
-    width: 72,
-    paddingHorizontal: 8,
+    paddingHorizontal: isSmallDevice ? 6 : 8,
     paddingVertical: 8,
     justifyContent: 'center',
     alignItems: 'flex-end',
+    // width is set dynamically via style prop ({ width: mode === 'rupees' ? INR_CELL : PCT_CELL })
   },
   headerText: {
     ...Typography.Caption,

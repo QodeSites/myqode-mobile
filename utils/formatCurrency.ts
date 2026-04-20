@@ -2,15 +2,15 @@
  * Formats a number using the Indian number system (lakh/crore)
  * e.g. 746309.51 → "₹7,46,309.51"
  */
-export function formatINR(value: number | null | undefined): string {
+export function formatINR(value: number | null | undefined, decimals = 2): string {
   if (value === null || value === undefined || isNaN(value)) return '₹0.00';
 
   const isNegative = value < 0;
   const abs = Math.abs(value);
 
   const formatted = abs.toLocaleString('en-IN', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
   });
 
   return `${isNegative ? '-' : ''}₹${formatted}`;

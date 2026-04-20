@@ -24,9 +24,7 @@ export function StatCard({ label, value, subtitle, icon, valueColor, style }: St
       </View>
       <Text
         style={[styles.value, { color: valueColor ?? Colors.textPrimary }]}
-        numberOfLines={1}
-        adjustsFontSizeToFit
-        minimumFontScale={0.6}
+        allowFontScaling={false}
       >
         {value}
       </Text>

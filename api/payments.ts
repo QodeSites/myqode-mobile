@@ -4,46 +4,113 @@ import { ENDPOINTS } from '@/constants/Api';
 export interface CreateOrderPayload {
   accountId: string;
   amount: number;
+  orderType: 'ONE_TIME' | 'NEW_STRATEGY';
+  strategyType?: 'QFH' | 'QAW' | 'QTF' | 'QGF';
   note?: string;
 }
 
 export interface CreateOrderResponse {
   orderId: string;
-  cfOrderId: string;
+  cfOrderId?: string;
   paymentSessionId: string;
-  amount: number;
-  currency: string;
-  status: string;
+  orderAmount: number;
+  amount?: number;
+  currency?: string;
+  status?: string;
+  environment: string;
 }
 
 export interface TimelineStep {
-  step: number;
+  step: string;
   label: string;
-  status: 'completed' | 'active' | 'pending';
-  date?: string;
-  note?: string;
+  completedAt: string | null;
+  done: boolean;
+}
+
+export interface SipChargeEntry {
+  installmentNumber: number;
+  amount: number;
+  formattedAmount: string;
+  status: 'SUCCESS' | 'FAILED' | 'PENDING';
+  cfPaymentId: string | null;
+  paidAt: string | null;
+  chargeDate: string | null;
+  failureReason: string | null;
+  retryCount: number;
 }
 
 export interface InvestmentOrder {
   orderId: string;
   amount: number;
+  formattedAmount: string;
   currency: string;
-  status: string;
+  paymentType: 'ONE_TIME' | 'SIP';
+  isNewStrategy: boolean;
+  strategyType: string | null;
+  paymentStatus: string;
+  investmentStatus: string;
+  statusLabel: string;
+  statusMessage: string;
+  statusColor: string;
+  isTerminal: boolean;
   createdAt: string;
   updatedAt: string;
+  paymentTime: string | null;
+  settledAt: string | null;
+  deployedAt: string | null;
+  settlementAmount: number | null;
+  transferUtr: string | null;
+  bankReference: string | null;
   timeline: TimelineStep[];
-  accountId: string;
-  note?: string;
+  // SIP-specific fields (present when paymentType === 'SIP')
+  frequency?: string;
+  startDate?: string;
+  endDate?: string | null;
+  totalInstallments?: number | null;
+  nextChargeDate?: string | null;
+  cfSubscriptionId?: string | null;
+  chargesCount?: number;
+  successfulCharges?: number;
+  failedCharges?: number;
+  lastChargeTime?: string | null;
+  chargeHistory?: SipChargeEntry[];
 }
 
 export interface InvestmentStatusResponse {
-  orders: InvestmentOrder[];
+  accountId: string;
+  active: InvestmentOrder[];
+  completed: InvestmentOrder[];
+  oneTime: { active: InvestmentOrder[]; completed: InvestmentOrder[] };
+  sip: { active: InvestmentOrder[]; completed: InvestmentOrder[] };
+  totalCount: number;
+  lastUpdated: string;
+}
+
+export interface VerifySipResponse {
+  subscriptionId: string;
+  cfSubscriptionStatus: string;
+  investmentStatus: string;
+  isActive: boolean;
+  isMandatePending: boolean;
+  isFailed: boolean;
+  amount: number;
+  frequency: string;
+  nextChargeDate: string | null;
+  authorizationDetails: {
+    authorizationStatus: string | null;
+    authorizationTime: string | null;
+  };
 }
 
 export interface VerifyOrderResponse {
   orderId: string;
-  status: string;
-  message: string;
+  paymentStatus: string;
+  isSuccess: boolean;
+  payment: {
+    amount: number;
+    time: string;
+    method: string;
+  } | null;
 }
 
 export const paymentsApi = {
@@ -60,7 +127,16 @@ export const paymentsApi = {
   },
 
   verifyOrder: async (orderId: string): Promise<VerifyOrderResponse> => {
-    const res = await apiClient.post<VerifyOrderResponse>(ENDPOINTS.PAYMENTS_VERIFY, { orderId });
+    const res = await apiClient.get<VerifyOrderResponse>(ENDPOINTS.PAYMENTS_VERIFY, {
+      params: { orderId },
+    });
+    return res.data;
+  },
+
+  verifySip: async (subscriptionId: string): Promise<VerifySipResponse> => {
+    const res = await apiClient.get<VerifySipResponse>(ENDPOINTS.PAYMENTS_VERIFY_SIP, {
+      params: { subscriptionId },
+    });
     return res.data;
   },
 };

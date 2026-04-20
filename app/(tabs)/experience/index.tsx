@@ -31,24 +31,40 @@ const GUIDE_SECTIONS = [
     desc: 'Stay connected through newsletters, events, and our referral program.',
     route: '/(tabs)/engagement',
   },
+  {
+    icon: 'people-outline' as const,
+    title: 'Family Account',
+    desc: 'View family group structure, account mapping, and raise requests.',
+    route: '/(tabs)/experience/family',
+  },
+  {
+    icon: 'business-outline' as const,
+    title: 'Bank Details',
+    desc: 'NEFT/RTGS transfer details for adding funds to your account.',
+    route: '/(tabs)/experience/bank-details',
+  },
+  {
+    icon: 'people-circle-outline' as const,
+    title: 'Your Team at Qode',
+    desc: 'Contact fund managers and IR team directly.',
+    route: '/(tabs)/experience/team',
+  },
+  {
+    icon: 'desktop-outline' as const,
+    title: 'Investor Portal Guide',
+    desc: 'WealthSpectrum portal guide, snapshots and video tutorials.',
+    route: '/(tabs)/experience/portal-guide',
+  },
 ];
 
-export default function PortalGuideScreen() {
+export default function ExperienceIndexScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <Text style={styles.title}>Investor Portal Guide</Text>
+          <Text style={styles.title}>Your Experience</Text>
           <Text style={styles.subtitle}>
             Everything you need to manage and monitor your Qode investment
-          </Text>
-        </View>
-
-        {/* Welcome banner */}
-        <View style={styles.banner}>
-          <Text style={styles.bannerTitle}>Welcome to myQode</Text>
-          <Text style={styles.bannerText}>
-            Your all-in-one dashboard for portfolio insights, account management, documents, and investor engagement.
           </Text>
         </View>
 

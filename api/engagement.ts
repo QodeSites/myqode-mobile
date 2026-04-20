@@ -1,13 +1,23 @@
 import apiClient from './client';
-import { ENDPOINTS } from '@/constants/Api';
+import { ENDPOINTS, API_BASE_URL } from '@/constants/Api';
+
+// /send-email lives at /api/send-email, not under /api/mobile
+const SEND_EMAIL_URL = API_BASE_URL.replace(/\/mobile$/, '') + '/send-email';
 
 export interface NewsletterItem {
-  id: string;
-  title: string;
-  monthYear: string;
-  pdfUrl: string;
-  thumbnail?: string;
-  subtitle?: string;
+  key: string;
+  title: string;      // e.g. "Jan-2026"
+  filename: string;
+  section: string;
+  url: string;
+  type: string;
+  size: number;
+  lastModified: string;
+}
+
+interface NewsletterListResponse {
+  items: NewsletterItem[];
+  count: number;
 }
 
 export interface Event {
@@ -17,6 +27,27 @@ export interface Event {
   location: string;
   description?: string;
   registrationUrl?: string;
+}
+
+export interface PortalGuideFile {
+  key: string;
+  filename: string;
+  reportName: string;
+  url: string;
+  size: number;
+}
+
+export interface PortalGuideResponse {
+  videos: PortalGuideFile[];
+  snapshots: PortalGuideFile[];
+  byReport: {
+    snapshots: Record<string, PortalGuideFile[]>;
+    videos: Record<string, PortalGuideFile[]>;
+  };
+  counts: {
+    videos: number;
+    snapshots: number;
+  };
 }
 
 export interface ReferralPayload {
@@ -34,13 +65,13 @@ export interface FeedbackPayload {
 
 export const engagementApi = {
   getNewsletters: async () => {
-    const res = await apiClient.get<NewsletterItem[]>(ENDPOINTS.NEWSLETTERS);
-    return res.data;
+    const res = await apiClient.get<NewsletterListResponse>(ENDPOINTS.NEWSLETTERS);
+    return res.data.items ?? [];
   },
 
   getPerspectives: async () => {
-    const res = await apiClient.get<NewsletterItem[]>(ENDPOINTS.PERSPECTIVES);
-    return res.data;
+    const res = await apiClient.get<NewsletterListResponse>(ENDPOINTS.PERSPECTIVES);
+    return res.data.items ?? [];
   },
 
   submitReferral: async (payload: ReferralPayload) => {
@@ -55,6 +86,16 @@ export const engagementApi = {
 
   getEvents: async () => {
     const res = await apiClient.get<Event[]>(ENDPOINTS.EVENTS);
+    return res.data;
+  },
+
+  sendEmail: async (payload: Record<string, unknown>): Promise<{ success: boolean; inquiry_id: string }> => {
+    const res = await apiClient.post(SEND_EMAIL_URL, payload);
+    return res.data;
+  },
+
+  getPortalGuide: async (): Promise<PortalGuideResponse> => {
+    const res = await apiClient.get<PortalGuideResponse>(ENDPOINTS.PORTAL_GUIDE);
     return res.data;
   },
 };

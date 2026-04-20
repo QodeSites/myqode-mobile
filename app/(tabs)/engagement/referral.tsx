@@ -47,31 +47,60 @@ const DETAILS = [
   { label: 'Tax Note', value: 'Referral rewards are subject to applicable TDS as per income tax rules' },
 ];
 
+/** Indian mobile: optional +91 prefix, then 10 digits starting with 6-9 */
+const PHONE_REGEX = /^(\+91[\s-]?)?[6-9]\d{9}$/;
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+interface FieldErrors {
+  name?: string;
+  phone?: string;
+  email?: string;
+}
+
 export default function ReferralScreen() {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [relationship, setRelationship] = useState('');
+  const [errors, setErrors] = useState<FieldErrors>({});
+  const [submitted, setSubmitted] = useState(false);
 
   const referralMutation = useMutation({
     mutationFn: (payload: ReferralPayload) => engagementApi.submitReferral(payload),
     onSuccess: () => {
-      Alert.alert(
-        'Referral Submitted! 🎉',
-        'Thank you for referring. Our IR team will reach out to your contact within 2 business days.',
-        [{ text: 'Great!', onPress: () => { setName(''); setPhone(''); setEmail(''); setRelationship(''); } }]
-      );
+      setSubmitted(true);
     },
     onError: () => {
       Alert.alert('Error', 'Failed to submit referral. Please try again or contact our IR team.');
     },
   });
 
-  const handleSubmit = () => {
-    if (!name.trim() || !phone.trim() || !email.trim()) {
-      Alert.alert('Required Fields', 'Please fill in name, phone, and email.');
-      return;
+  function validate(): boolean {
+    const newErrors: FieldErrors = {};
+
+    if (!name.trim()) {
+      newErrors.name = 'Name is required.';
     }
+
+    const cleanPhone = phone.replace(/[\s-]/g, '');
+    if (!cleanPhone) {
+      newErrors.phone = 'Phone number is required.';
+    } else if (!PHONE_REGEX.test(cleanPhone)) {
+      newErrors.phone = 'Enter a valid 10-digit Indian mobile number.';
+    }
+
+    if (!email.trim()) {
+      newErrors.email = 'Email address is required.';
+    } else if (!EMAIL_REGEX.test(email.trim())) {
+      newErrors.email = 'Enter a valid email address.';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  }
+
+  const handleSubmit = () => {
+    if (!validate()) return;
     referralMutation.mutate({
       refereeName: name.trim(),
       refereePhone: phone.trim(),
@@ -80,6 +109,53 @@ export default function ReferralScreen() {
     });
   };
 
+  const handleReset = () => {
+    setName('');
+    setPhone('');
+    setEmail('');
+    setRelationship('');
+    setErrors({});
+    setSubmitted(false);
+    referralMutation.reset();
+  };
+
+  // ── Success screen ───────────────────────────────────────────────────────────
+  if (submitted) {
+    return (
+      <SafeAreaView style={styles.safe} edges={['top']}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Referral Program</Text>
+          <Text style={styles.subtitle}>Refer a friend, earn rewards together</Text>
+        </View>
+        <View style={styles.successContainer}>
+          <View style={styles.successIconCircle}>
+            <Ionicons name="checkmark" size={44} color={Colors.accentGreen} />
+          </View>
+          <Text style={styles.successTitle}>Referral Submitted!</Text>
+          <Text style={styles.successBody}>
+            Thank you for referring{name ? ` ${name}` : ''}. Our IR team will reach out to your
+            contact within 2 business days.
+          </Text>
+          <View style={styles.successCard}>
+            <Text style={styles.successCardLabel}>What happens next?</Text>
+            <View style={styles.successStepRow}>
+              <Ionicons name="mail-outline" size={16} color={Colors.accentGreen} />
+              <Text style={styles.successStepText}>Your contact will receive a call / email from our IR team.</Text>
+            </View>
+            <View style={styles.successStepRow}>
+              <Ionicons name="person-add-outline" size={16} color={Colors.accentGreen} />
+              <Text style={styles.successStepText}>Once they invest, your reward will be credited within 30 business days.</Text>
+            </View>
+          </View>
+          <TouchableOpacity style={styles.backBtn} onPress={handleReset} activeOpacity={0.85}>
+            <Text style={styles.backBtnText}>Refer Someone Else</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // ── Main form ────────────────────────────────────────────────────────────────
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <KeyboardAvoidingView
@@ -157,24 +233,27 @@ export default function ReferralScreen() {
               <FormField
                 label="Referee's Full Name *"
                 value={name}
-                onChangeText={setName}
+                onChangeText={(t) => { setName(t); setErrors((e) => ({ ...e, name: undefined })); }}
                 placeholder="John Doe"
                 autoCapitalize="words"
+                error={errors.name}
               />
               <FormField
                 label="Phone Number *"
                 value={phone}
-                onChangeText={setPhone}
+                onChangeText={(t) => { setPhone(t); setErrors((e) => ({ ...e, phone: undefined })); }}
                 placeholder="+91 98765 43210"
                 keyboardType="phone-pad"
+                error={errors.phone}
               />
               <FormField
                 label="Email Address *"
                 value={email}
-                onChangeText={setEmail}
+                onChangeText={(t) => { setEmail(t); setErrors((e) => ({ ...e, email: undefined })); }}
                 placeholder="john@example.com"
                 keyboardType="email-address"
                 autoCapitalize="none"
+                error={errors.email}
               />
               <FormField
                 label="Your Relationship"
@@ -218,6 +297,7 @@ function FormField({
   placeholder,
   keyboardType,
   autoCapitalize,
+  error,
 }: {
   label: string;
   value: string;
@@ -225,12 +305,13 @@ function FormField({
   placeholder: string;
   keyboardType?: any;
   autoCapitalize?: any;
+  error?: string;
 }) {
   return (
     <View style={styles.fieldGroup}>
       <Text style={styles.fieldLabel}>{label}</Text>
       <TextInput
-        style={styles.fieldInput}
+        style={[styles.fieldInput, !!error && styles.fieldInputError]}
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
@@ -238,6 +319,7 @@ function FormField({
         keyboardType={keyboardType}
         autoCapitalize={autoCapitalize ?? 'sentences'}
       />
+      {!!error && <Text style={styles.fieldError}>{error}</Text>}
     </View>
   );
 }
@@ -254,6 +336,75 @@ const styles = StyleSheet.create({
   },
   title: { ...Typography.H1, color: Colors.textPrimary },
   subtitle: { ...Typography.BodySmall, color: Colors.textSecondary, marginTop: 4 },
+
+  // ── Success screen ──────────────────────────────────────────────────────────
+  successContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 32,
+    gap: 16,
+  },
+  successIconCircle: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: `${Colors.accentGreen}18`,
+    borderWidth: 2,
+    borderColor: `${Colors.accentGreen}40`,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  successTitle: {
+    ...Typography.H1,
+    color: Colors.textPrimary,
+    textAlign: 'center',
+  },
+  successBody: {
+    ...Typography.Body,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  successCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    padding: 16,
+    gap: 10,
+    width: '100%',
+    ...cardShadow,
+  },
+  successCardLabel: {
+    ...Typography.BodySmall,
+    color: Colors.textPrimary,
+    fontFamily: 'Inter_600SemiBold',
+  },
+  successStepRow: {
+    flexDirection: 'row',
+    gap: 10,
+    alignItems: 'flex-start',
+  },
+  successStepText: {
+    ...Typography.BodySmall,
+    color: Colors.textSecondary,
+    flex: 1,
+    lineHeight: 18,
+  },
+  backBtn: {
+    backgroundColor: Colors.primaryDark,
+    borderRadius: 8,
+    height: 52,
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
+    marginTop: 8,
+  },
+  backBtnText: { ...Typography.ButtonLabel, color: Colors.white },
+
+  // ── Form ────────────────────────────────────────────────────────────────────
   heroSection: {
     backgroundColor: Colors.primaryDark,
     padding: 28,
@@ -374,6 +525,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     ...Typography.Body,
     color: Colors.textPrimary,
+  },
+  fieldInputError: {
+    borderColor: Colors.negative,
+  },
+  fieldError: {
+    ...Typography.Caption,
+    color: Colors.negative,
   },
   errorText: {
     ...Typography.BodySmall,

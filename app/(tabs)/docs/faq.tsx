@@ -13,67 +13,157 @@ interface FAQItem {
 }
 
 const FAQ_DATA: FAQItem[] = [
+  // TOP-UPS
   {
-    category: 'Getting Started',
-    q: 'What is Portfolio Management Service (PMS)?',
-    a: 'PMS is a SEBI-regulated investment service where a professional portfolio manager manages your equity portfolio on your behalf. Minimum investment is ₹50 lakhs as per SEBI regulations.',
+    category: 'Top-Ups',
+    q: 'How do I add more funds?',
+    a: 'Via the app\'s Invest screen. Once your transfer is received, funds are executed on T+1 business day.',
   },
   {
-    category: 'Getting Started',
-    q: 'What is the minimum investment with Qode?',
-    a: 'The minimum investment for Qode PMS is ₹50 lakhs as mandated by SEBI. This is invested directly in equities held in your own demat account.',
+    category: 'Top-Ups',
+    q: 'Can I set up a SIP?',
+    a: 'Yes, you can set up a Systematic Investment Plan (SIP) to invest fixed amounts at regular intervals. Use the Invest → SIP tab in the app.',
   },
   {
-    category: 'Portfolio',
-    q: 'How is NAV calculated?',
-    a: 'NAV (Net Asset Value) is calculated by dividing the total market value of all securities in your portfolio by the initial investment amount, expressed as a unit value starting at 1000.',
+    category: 'Top-Ups',
+    q: 'Can I set up an STP?',
+    a: 'Yes. You can park funds in Qode Liquid Fund and set up a Systematic Transfer Plan (STP) to periodically transfer into your core strategies over time.',
   },
   {
-    category: 'Portfolio',
-    q: 'What strategies does Qode offer?',
-    a: 'Qode offers four strategies: QAW (All Weather) — multi-factor balanced; QTF (Trend Following) — momentum-based; QGF (Growth Fund) — concentrated growth; QFH (Focused Hybrid) — hybrid equity-debt approach.',
+    category: 'Top-Ups',
+    q: 'Are there any top-up limits?',
+    a: 'Top-ups must be in multiples of ₹1 lakh. Your total portfolio value must remain above the ₹50 lakh SEBI minimum at all times.',
+  },
+  // WITHDRAWALS
+  {
+    category: 'Withdrawals',
+    q: 'How do I withdraw from my portfolio?',
+    a: 'Submit a withdrawal request via the app\'s Invest → Withdrawal tab. Funds are typically credited to your bank account within T+10 business days.',
   },
   {
-    category: 'Portfolio',
-    q: 'Can I invest in multiple strategies?',
-    a: 'Yes, you can allocate capital across multiple Qode strategies. Each strategy runs independently in its own sub-account within your demat.',
+    category: 'Withdrawals',
+    q: 'Is there a lock-in period?',
+    a: 'No lock-in period as per SEBI PMS guidelines. However, partial withdrawals must maintain the minimum portfolio balance. Full exits are processed without penalty.',
+  },
+  // FEES
+  {
+    category: 'Fees',
+    q: 'How are fees charged?',
+    a: 'Qode charges quarterly management fees and annual performance fees above the High Watermark (HWM). Performance fees are only levied when your portfolio reaches a new NAV high.',
   },
   {
     category: 'Fees',
-    q: 'What are Qode\'s fees?',
-    a: 'Qode charges a fixed management fee and a performance fee. Specific fee details are outlined in your PMS Agreement. Please refer to your agreement or contact our IR team for exact figures.',
+    q: 'Do fees include GST?',
+    a: 'Yes, all fees (management and performance) are subject to GST as applicable under prevailing tax laws.',
   },
+  // TAXES
   {
-    category: 'Fees',
-    q: 'Are there exit charges?',
-    a: 'There may be exit fees if you redeem within the minimum holding period specified in your PMS agreement. Post that period, there are no exit charges.',
-  },
-  {
-    category: 'Operations',
-    q: 'How do I add funds to my portfolio?',
-    a: 'You can add funds via bank transfer (RTGS/NEFT) to Qode\'s designated account. Use the bank details available under Account Services. Contact IR to initiate the process.',
-  },
-  {
-    category: 'Operations',
-    q: 'How long does it take for funds to get invested?',
-    a: 'Once funds are received and confirmed, they are typically deployed within 2–5 business days, depending on market conditions and strategy mandate.',
+    category: 'Taxes',
+    q: 'Will Qode deduct capital gains tax?',
+    a: 'No. Investors are responsible for paying their own capital gains tax. Qode provides annual tax packs with detailed realized/unrealized gains statements to help you file accurately.',
   },
   {
     category: 'Taxes',
-    q: 'How are PMS gains taxed?',
-    a: 'Gains from PMS are taxed in your hands as capital gains — short-term (STCG at 15%) for holdings under 1 year, long-term (LTCG at 10% above ₹1L) for over 1 year. Qode provides an annual tax computation statement.',
+    q: 'Is TDS applicable on referral rewards?',
+    a: 'Yes, TDS is applicable on referral rewards as per law. TDS is not applicable on investment returns from the PMS.',
+  },
+  {
+    category: 'Taxes',
+    q: 'Does Qode do tax loss harvesting?',
+    a: 'No. Qode focuses on evidence-based long-term investing. We do not engage in tactical tax loss harvesting as it conflicts with our investment philosophy.',
+  },
+  {
+    category: 'Taxes',
+    q: 'Do I get tax statements?',
+    a: 'Yes, annual tax packs are provided covering realized and unrealized gains, dividend credits, and all relevant transaction documents required for your ITR filing.',
+  },
+  // MINIMUMS & CUSTOMIZATION
+  {
+    category: 'Minimums & Customization',
+    q: 'What is the minimum investment?',
+    a: '₹50 lakhs as mandated by SEBI for all Portfolio Management Services. This is a regulatory requirement and not a Qode-specific policy.',
+  },
+  {
+    category: 'Minimums & Customization',
+    q: 'Can I customize my portfolio?',
+    a: 'No. All clients hold the same model portfolio within each strategy. This ensures equal treatment, fairness, and operational efficiency across the investor base.',
+  },
+  // PORTAL ACCESS
+  {
+    category: 'Portal Access',
+    q: 'How do I log into WealthSpectrum?',
+    a: 'Use your registered email address at the WealthSpectrum portal. Contact the IR team if you haven\'t received your login credentials.',
+  },
+  {
+    category: 'Portal Access',
+    q: 'I forgot my WealthSpectrum password. What do I do?',
+    a: 'Use the "Forgot Password" option on the WealthSpectrum login page, or reach out to the IR team at investor.relations@qodeinvest.com for assistance.',
+  },
+  // RISK & OPERATIONS
+  {
+    category: 'Risk & Operations',
+    q: 'Can my portfolio lose value?',
+    a: 'Yes. All equity investments carry market risk. Qode manages risk through diversification, disciplined rebalancing, and a systematic hedging policy — but capital loss is possible.',
+  },
+  {
+    category: 'Risk & Operations',
+    q: 'How does Qode manage risk during extreme market conditions?',
+    a: 'Qode follows a defined hedging policy, drawdown protocols, liquidity management rules, and concentration discipline to limit downside in extreme conditions.',
+  },
+  {
+    category: 'Risk & Operations',
+    q: 'Who holds custody of my investments?',
+    a: 'Your investments are held in your own demat account via SEBI-registered custodians. Qode manages the portfolio through a Power of Attorney (POA) only.',
+  },
+  {
+    category: 'Risk & Operations',
+    q: 'What happens during system downtime?',
+    a: 'Qode maintains Business Continuity Plans (BCP) and Disaster Recovery (DR) protocols to ensure operations continue without interruption.',
+  },
+  {
+    category: 'Risk & Operations',
+    q: 'Can I switch between strategies?',
+    a: 'Yes, strategy switches are permitted during the monthly rebalance window. Requests are subject to Qode\'s reallocation guidelines and must be raised via the app or IR team.',
   },
 ];
 
 const GLOSSARY = [
-  { term: 'NAV', def: 'Net Asset Value — the per-unit value of your portfolio' },
-  { term: 'CAGR', def: 'Compound Annual Growth Rate — annualised return' },
-  { term: 'Drawdown', def: 'Peak-to-trough decline in portfolio value from its highest point' },
-  { term: 'PMS', def: 'Portfolio Management Service — SEBI regulated investment product' },
-  { term: 'SIP', def: 'Systematic Investment Plan — periodic investments at fixed intervals' },
-  { term: 'SEBI', def: 'Securities and Exchange Board of India — market regulator' },
-  { term: 'Inception Date', def: 'Date when your portfolio strategy was initiated' },
-  { term: 'Benchmark', def: 'Reference index (Nifty 50) used to compare portfolio performance' },
+  {
+    term: 'XIRR',
+    def: 'Extended Internal Rate of Return — accounts for timing and size of multiple cash flows to compute true annualised return.',
+  },
+  {
+    term: 'HWM (High Watermark)',
+    def: 'The highest NAV your portfolio has ever reached. Performance fees are only charged when the portfolio exceeds this level.',
+  },
+  {
+    term: 'Benchmark',
+    def: 'A reference index (e.g. Nifty 50) used to measure and compare portfolio performance over time.',
+  },
+  {
+    term: 'Drawdown',
+    def: 'Peak-to-trough percentage decline in a portfolio\'s value from its recent high point.',
+  },
+  {
+    term: 'STP (Systematic Transfer Plan)',
+    def: 'A phased investment approach: park funds in a liquid fund and periodically transfer into your core equity strategies.',
+  },
+  {
+    term: 'Custodian',
+    def: 'A SEBI-registered entity responsible for safeguarding client funds and securities in their demat account.',
+  },
+  {
+    term: 'Protective Put',
+    def: 'An options contract used by Qode to limit downside risk on the portfolio while preserving upside participation.',
+  },
+  {
+    term: 'Rebalancing',
+    def: 'Monthly process of realigning each client\'s portfolio back to the strategy\'s model portfolio weights.',
+  },
+  {
+    term: 'SEBI',
+    def: 'Securities and Exchange Board of India — the regulatory authority governing all investment products including PMS.',
+  },
 ];
 
 function FAQAccordion({ item, isOpen, onToggle }: { item: FAQItem; isOpen: boolean; onToggle: () => void }) {

@@ -3,31 +3,47 @@
     "name": "myQode",
     "slug": "myqode",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
       "image": "./assets/splash.png",
-      "resizeMode": "contain",
+      "resizeMode": "cover",
       "backgroundColor": "#1A3D2B"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.qodeinvest.myqode",
+      "deploymentTarget": "15.1",
       "buildNumber": "1",
+      "splash": {
+        "image": "./assets/splash.png",
+        "resizeMode": "cover",
+        "backgroundColor": "#1A3D2B"
+      },
       "infoPlist": {
         "NSCameraUsageDescription": "Used for document scanning",
-        "NSPhotoLibraryUsageDescription": "Used to save documents"
+        "NSPhotoLibraryUsageDescription": "Used to save documents",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
+      "icon": "./assets/icon.png",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#1A3D2B"
       },
+      "splash": {
+        "image": "./assets/splash.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#1A3D2B"
+      },
       "package": "com.qodeinvest.myqode",
       "versionCode": 1,
+      "edgeToEdge": true,
       "permissions": [
         "READ_EXTERNAL_STORAGE",
         "WRITE_EXTERNAL_STORAGE"
@@ -39,6 +55,7 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
+      "expo-dev-client",
       "expo-router",
       "expo-secure-store",
       [
@@ -52,6 +69,13 @@
     "experiments": {
       "typedRoutes": true
     },
-    "scheme": "myqode"
+    "newArchEnabled": true,
+    "scheme": "myqode",
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "f886ac20-46c1-4fc9-a126-e1b19163330f"
+      }
+    }
   }
 }

@@ -1,0 +1,101 @@
+diff --git a/node_modules/expo-dev-menu-interface/ios/DevMenuBridgeProtocol.swift b/node_modules/expo-dev-menu-interface/ios/DevMenuBridgeProtocol.swift
+deleted file mode 100644
+index bfdf403..0000000
+--- a/node_modules/expo-dev-menu-interface/ios/DevMenuBridgeProtocol.swift
++++ /dev/null
+@@ -1,15 +0,0 @@
+-// Copyright 2015-present 650 Industries. All rights reserved.
+-
+-import Foundation
+-
+-@objc
+-public protocol DevMenuBridgeProtocol {
+-  @objc
+-  optional func module(forName: String) -> AnyObject?
+-
+-  @objc
+-  optional func modulesConforming(toProtocol: Protocol) -> [AnyObject]
+-
+-  @objc
+-  optional func requestReload()
+-}
+diff --git a/node_modules/expo-dev-menu-interface/ios/DevMenuManagerProtocol.swift b/node_modules/expo-dev-menu-interface/ios/DevMenuManagerProtocol.swift
+deleted file mode 100644
+index 5d638d9..0000000
+--- a/node_modules/expo-dev-menu-interface/ios/DevMenuManagerProtocol.swift
++++ /dev/null
+@@ -1,44 +0,0 @@
+-// Copyright 2015-present 650 Industries. All rights reserved.
+-
+-import Foundation
+-
+-@objc
+-public protocol DevMenuManagerProtocol {
+-  /**
+-   Whether the dev menu window is visible on the device screen.
+-   */
+-  @objc
+-  var isVisible: Bool { get }
+-
+-  /**
+-   Opens up the dev menu.
+-   */
+-  @objc
+-  @discardableResult
+-  func openMenu(_ screen: String?) -> Bool
+-
+-  @objc
+-  @discardableResult
+-  func openMenu() -> Bool
+-
+-  /**
+-   Sends an event to JS to start collapsing the dev menu bottom sheet.
+-   */
+-  @objc
+-  @discardableResult
+-  func closeMenu() -> Bool
+-
+-  /**
+-   Forces the dev menu to hide. Called by JS once collapsing the bottom sheet finishes.
+-   */
+-  @objc
+-  @discardableResult
+-  func hideMenu() -> Bool
+-
+-  /**
+-   Toggles the visibility of the dev menu.
+-   */
+-  @objc
+-  @discardableResult
+-  func toggleMenu() -> Bool
+-}
+diff --git a/node_modules/expo-dev-menu-interface/ios/DevMenuUIResponderExtensionProtocol.swift b/node_modules/expo-dev-menu-interface/ios/DevMenuUIResponderExtensionProtocol.swift
+deleted file mode 100644
+index 790079a..0000000
+--- a/node_modules/expo-dev-menu-interface/ios/DevMenuUIResponderExtensionProtocol.swift
++++ /dev/null
+@@ -1,10 +0,0 @@
+-// Copyright 2015-present 650 Industries. All rights reserved.
+-
+-import Foundation
+-import UIKit
+-
+-@objc
+-public protocol DevMenuUIResponderExtensionProtocol {
+-  @objc
+-  func EXDevMenu_handleKeyCommand(_ key: UIKeyCommand)
+-}
+diff --git a/node_modules/expo-dev-menu-interface/ios/EXDevMenuInterface.swift b/node_modules/expo-dev-menu-interface/ios/EXDevMenuInterface.swift
+new file mode 100644
+index 0000000..97cc02a
+--- /dev/null
++++ b/node_modules/expo-dev-menu-interface/ios/EXDevMenuInterface.swift
+@@ -0,0 +1,8 @@
++// EXDevMenuInterface.swift
++// Stub file — required for CocoaPods to generate the Swift module map.
++// expo-dev-menu-interface@2.0.0 was published without iOS source files.
++
++import Foundation
++
++@objc public protocol EXDevMenuDelegateProtocol {}
++@objc public class EXDevMenuInterfaceModule: NSObject {}

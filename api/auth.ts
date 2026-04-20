@@ -1,4 +1,4 @@
-import apiClient, { TOKEN_KEY } from './client';
+import apiClient, { TOKEN_KEY, IMPERSONATION_TOKEN_KEY } from './client';
 import { ENDPOINTS } from '@/constants/Api';
 import * as SecureStore from 'expo-secure-store';
 
@@ -15,6 +15,9 @@ export interface User {
   accountCodes: string[];
   isHeadOfFamily: boolean;
   avatar?: string;
+  isSuperAdmin?: boolean;
+  isImpersonated?: boolean;
+  impersonatedBy?: string;
 }
 
 export interface LoginResponse {
@@ -22,6 +25,8 @@ export interface LoginResponse {
   expiresIn: number;
   user: User;
 }
+
+const USER_CACHE_KEY = 'myqode_user_cache';
 
 export const authApi = {
   login: async (payload: LoginPayload): Promise<LoginResponse> => {
@@ -33,7 +38,11 @@ export const authApi = {
     try {
       await apiClient.post(ENDPOINTS.LOGOUT);
     } finally {
-      await SecureStore.deleteItemAsync(TOKEN_KEY);
+      await Promise.all([
+        SecureStore.deleteItemAsync(TOKEN_KEY),
+        SecureStore.deleteItemAsync(IMPERSONATION_TOKEN_KEY),
+        SecureStore.deleteItemAsync(USER_CACHE_KEY),
+      ]);
     }
   },
 
@@ -51,6 +60,24 @@ export const authApi = {
   },
 
   clearToken: async (): Promise<void> => {
-    await SecureStore.deleteItemAsync(TOKEN_KEY);
+    await Promise.all([
+      SecureStore.deleteItemAsync(TOKEN_KEY),
+      SecureStore.deleteItemAsync(IMPERSONATION_TOKEN_KEY),
+      SecureStore.deleteItemAsync(USER_CACHE_KEY),
+    ]);
+  },
+
+  // Cache user object so app restores immediately on reopen
+  cacheUser: async (user: User): Promise<void> => {
+    await SecureStore.setItemAsync(USER_CACHE_KEY, JSON.stringify(user));
+  },
+
+  getCachedUser: async (): Promise<User | null> => {
+    try {
+      const raw = await SecureStore.getItemAsync(USER_CACHE_KEY);
+      return raw ? (JSON.parse(raw) as User) : null;
+    } catch {
+      return null;
+    }
   },
 };

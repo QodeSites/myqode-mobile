@@ -9,7 +9,7 @@ const ESCALATION_LEVELS = [
   {
     level: 1,
     title: 'Investor Relations (First Point)',
-    contact: 'ir@qodeinvest.com',
+    contact: 'investor.relations@qodeinvest.com',
     phone: '+91 98203 00028',
     type: 'email' as const,
     desc: 'For all account-related queries, document requests, and general service issues. Expected resolution: 3–5 business days.',

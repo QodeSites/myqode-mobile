@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Linking } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Linking, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
@@ -9,24 +9,25 @@ import { OutlinedButton } from '@/components/ui/OutlinedButton';
 import { useAuthStore } from '@/store/authStore';
 
 const WHATSAPP_NUMBER = '919820300028';
-const IR_EMAIL = 'ir@qodeinvest.com';
-const CALENDLY_URL = 'https://calendly.com/qodeinvest';
+const IR_EMAIL = 'investor.relations@qodeinvest.com';
+const CALENDLY_URL = 'https://crm.zoho.in/bookings/30minutesmeeting?rid=5ec313c47c4d600297f76c4db5ed16b9ec7023047ad9adae51cf7233a95aed39b78a114a405bd5ecb516bbd5c82eb973gid34d89af86b644a5bbc06e671dae756f5663840a52f688352fdf9715c33a97bcd';
 
 export default function TeamScreen() {
   const user = useAuthStore((s) => s.user);
   const selectedAccountId = useAuthStore((s) => s.selectedAccountId);
 
-  const openWhatsApp = () => {
-    Linking.openURL(`https://wa.me/${WHATSAPP_NUMBER}`);
+  const safeOpen = (url: string, fallback?: string) => {
+    Linking.canOpenURL(url).then((ok) => {
+      if (ok) return Linking.openURL(url);
+      Alert.alert('Cannot Open', fallback ?? 'Please contact investor.relations@qodeinvest.com');
+    }).catch(() => {
+      Alert.alert('Cannot Open', fallback ?? 'Please contact investor.relations@qodeinvest.com');
+    });
   };
 
-  const openEmail = (email: string) => {
-    Linking.openURL(`mailto:${email}`);
-  };
-
-  const openCalendly = () => {
-    Linking.openURL(CALENDLY_URL);
-  };
+  const openWhatsApp = () => safeOpen(`https://wa.me/${WHATSAPP_NUMBER}`, 'WhatsApp: +91 98203 00028');
+  const openEmail = (email: string) => safeOpen(`mailto:${email}`, `Email: ${email}`);
+  const openCalendly = () => safeOpen(CALENDLY_URL, 'Email investor.relations@qodeinvest.com with subject "Book a Call Request"');
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -73,7 +74,7 @@ export default function TeamScreen() {
             </Text>
             <TouchableOpacity
               style={styles.linkBtn}
-              onPress={() => openEmail('strategy@qodeinvest.com')}
+              onPress={() => openEmail('investor.relations@qodeinvest.com')}
             >
               <Ionicons name="chatbubble-ellipses-outline" size={14} color={Colors.accentGreen} />
               <Text style={styles.linkBtnText}>Ask a Question on Strategy</Text>

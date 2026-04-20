@@ -13,6 +13,10 @@ export default function ExperienceLayout() {
       <Stack.Screen name="services" />
       <Stack.Screen name="mapping" />
       <Stack.Screen name="cadence" />
+      <Stack.Screen name="bank-details" />
+      <Stack.Screen name="family" />
+      <Stack.Screen name="team" />
+      <Stack.Screen name="portal-guide" />
     </Stack>
   );
 }

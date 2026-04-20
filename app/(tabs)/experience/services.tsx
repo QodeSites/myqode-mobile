@@ -38,8 +38,8 @@ export default function ServicesScreen() {
   const copyBankDetails = () => {
     const bd = bankDetails.data;
     if (!bd) return;
-    const text = (bd as any).copyText
-      ?? `Bank: ${bd.bankName}\nAccount Name: ${bd.accountName}\nAccount No: ${bd.accountNumber}\nIFSC: ${bd.ifscCode}\nType: ${bd.accountType}`;
+    const text = bd.copyText
+      ?? `Pay to: ${bd.payableTo}\nBank: ${bd.bank}\nAccount No: ${bd.accountNumber}\nIFSC: ${bd.ifsc}${bd.micr ? `\nMICR: ${bd.micr}` : ''}`;
     Clipboard.setString(text);
     Alert.alert('Copied!', 'Bank details copied to clipboard.');
   };
@@ -112,11 +112,13 @@ export default function ServicesScreen() {
             {/* Bank details sub-card */}
             {bankDetails.data && (
               <View style={styles.bankCard}>
-                <BankRow label="Bank" value={bankDetails.data.bankName} />
-                <BankRow label="Account Name" value={bankDetails.data.accountName} />
+                <BankRow label="Payable To" value={bankDetails.data.payableTo} />
+                <BankRow label="Bank" value={bankDetails.data.bank} />
                 <BankRow label="Account No." value={bankDetails.data.accountNumber} mono />
-                <BankRow label="IFSC" value={bankDetails.data.ifscCode} mono />
-                <BankRow label="Account Type" value={bankDetails.data.accountType} last />
+                <BankRow label="IFSC" value={bankDetails.data.ifsc} mono />
+                {bankDetails.data.micr ? (
+                  <BankRow label="MICR" value={bankDetails.data.micr} last />
+                ) : null}
               </View>
             )}
             <TouchableOpacity style={styles.copyBtn} onPress={copyBankDetails}>
@@ -144,8 +146,8 @@ export default function ServicesScreen() {
               <TouchableOpacity onPress={() => transactions.refetch()}>
                 <Text style={styles.errorText}>Failed to load. Tap to retry.</Text>
               </TouchableOpacity>
-            ) : transactions.data && transactions.data.length > 0 ? (
-              transactions.data.map((t, i) => (
+            ) : (transactions.data?.transactions ?? []).length > 0 ? (
+              (transactions.data?.transactions ?? []).map((t, i) => (
                 <TransactionRow key={t.orderId ?? i} transaction={t} />
               ))
             ) : (

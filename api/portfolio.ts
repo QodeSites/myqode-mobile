@@ -154,7 +154,7 @@ export const portfolioApi = {
       .map(([key, values]) => ({
         name: key === 'portfolio' ? 'Portfolio' : key === 'nifty50' ? 'Nifty 50' : benchmarkName,
         type: key === 'portfolio' ? 'portfolio' : 'benchmark',
-        ...values,
+        ...(values as object),
       }));
     return { ...raw, trailingReturns };
   },
@@ -166,7 +166,7 @@ export const portfolioApi = {
     const data = series.map((d) => ({
       date: d.date,
       portfolioNav: d.portfolio ?? 0,
-      benchmarkNav: d.benchmark ?? d.nifty50 ?? 0,
+      benchmarkNav: d.benchmark ?? (d as any).nifty50 ?? 0,
     })) as NAVDataPoint[];
     return { data, benchmarkName };
   },
@@ -178,7 +178,7 @@ export const portfolioApi = {
     const data = series.map((d) => ({
       date: d.date,
       portfolioDD: d.portfolio ?? 0,
-      benchmarkDD: d.benchmark ?? d.nifty50 ?? 0,
+      benchmarkDD: d.benchmark ?? (d as any).nifty50 ?? 0,
     })) as DrawdownDataPoint[];
     return { data, benchmarkName };
   },
@@ -210,7 +210,7 @@ export const portfolioApi = {
       .map(([key, values]) => ({
         name: key === 'portfolio' ? 'Portfolio' : key === 'nifty50' ? 'Nifty 50' : benchmarkName,
         type: key === 'portfolio' ? 'portfolio' : 'benchmark',
-        ...values,
+        ...(values as object),
       }));
     return { ...raw, trailingReturns };
   },
@@ -222,7 +222,7 @@ export const portfolioApi = {
     const data = series.map((d) => ({
       date: d.date,
       portfolioNav: d.portfolio ?? 0,
-      benchmarkNav: d.benchmark ?? d.nifty50 ?? 0,
+      benchmarkNav: d.benchmark ?? (d as any).nifty50 ?? 0,
     })) as NAVDataPoint[];
     return { data, benchmarkName };
   },
@@ -234,7 +234,7 @@ export const portfolioApi = {
     const data = series.map((d) => ({
       date: d.date,
       portfolioDD: d.portfolio ?? 0,
-      benchmarkDD: d.benchmark ?? d.nifty50 ?? 0,
+      benchmarkDD: d.benchmark ?? (d as any).nifty50 ?? 0,
     })) as DrawdownDataPoint[];
     return { data, benchmarkName };
   },

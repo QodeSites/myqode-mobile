@@ -59,8 +59,12 @@ apiClient.interceptors.response.use(
       return apiClient(config);
     }
 
-    // Handle 401 — token expired or invalid
-    if (status === 401) {
+    // Handle 401 — token expired or invalid.
+    // Skip auto-logout for auth endpoints (login/check-identifier) — a 401 there
+    // means wrong credentials, not an expired session token, so let the caller
+    // surface the error normally instead of bouncing the user to the login screen.
+    const isAuthEndpoint = config?.url?.includes('/auth/login') || config?.url?.includes('/auth/check-identifier');
+    if (status === 401 && !isAuthEndpoint) {
       try {
         const impToken = await SecureStore.getItemAsync(IMPERSONATION_TOKEN_KEY);
         if (impToken) {

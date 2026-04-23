@@ -29,6 +29,11 @@ export interface LoginResponse {
 const USER_CACHE_KEY = 'myqode_user_cache';
 
 export const authApi = {
+  checkIdentifier: async (identifier: string): Promise<{ exists: boolean }> => {
+    const res = await apiClient.post<{ exists: boolean }>(ENDPOINTS.CHECK_IDENTIFIER, { identifier }, { timeout: 5000 });
+    return res.data;
+  },
+
   login: async (payload: LoginPayload): Promise<LoginResponse> => {
     const res = await apiClient.post<LoginResponse>(ENDPOINTS.LOGIN, payload);
     return res.data;

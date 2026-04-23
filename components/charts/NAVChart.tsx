@@ -67,10 +67,16 @@ export function NAVChart({ data, benchmarkName = 'Benchmark', loading = false }:
   }));
 
   if (loading) return <ChartSkeleton />;
-  if (!data || data.length === 0) {
+  if (!data || data.length < 2) {
     return (
       <View style={[styles.empty, { height: CHART_HEIGHT }]}>
-        <Text style={styles.emptyText}>No chart data available</Text>
+        <Text style={styles.emptyTitle}>Data Updating</Text>
+        <Text style={styles.emptyText}>
+          {data && data.length === 1
+            ? 'Only 1 data point available so far.'
+            : 'No NAV data available yet.'}
+          {'\n'}Since this account is new, please check back in 2–3 days once data has been populated.
+        </Text>
       </View>
     );
   }
@@ -109,8 +115,12 @@ export function NAVChart({ data, benchmarkName = 'Benchmark', loading = false }:
   const liveBenchmark = isActive ? (data[safeIdx]?.benchmarkNav ?? null) : null;
 
   const n = data.length;
-  const xTickIndices = Array.from({ length: X_TICK_COUNT }, (_, i) =>
-    Math.round((i / (X_TICK_COUNT - 1)) * (n - 1))
+  const xTickIndices = Array.from(
+    new Set(
+      Array.from({ length: X_TICK_COUNT }, (_, i) =>
+        Math.round((i / (X_TICK_COUNT - 1)) * (n - 1))
+      )
+    )
   );
 
   return (
@@ -225,7 +235,7 @@ export function NAVChart({ data, benchmarkName = 'Benchmark', loading = false }:
         <View style={styles.xLabels}>
           {xTickIndices.map((idx, i) => (
             <Text
-              key={idx}
+              key={i}
               style={[
                 styles.xLabel,
                 i === 0 && { textAlign: 'left' },
@@ -276,7 +286,13 @@ const styles = StyleSheet.create({
   legendDot: { width: 8, height: 8, borderRadius: 4 },
   legendLabel: { ...Typography.Caption, color: Colors.textSecondary },
   empty: { justifyContent: 'center', alignItems: 'center' },
-  emptyText: { ...Typography.BodySmall, color: Colors.textSecondary },
+  emptyTitle: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 13,
+    color: Colors.textPrimary,
+    marginBottom: 6,
+  },
+  emptyText: { ...Typography.BodySmall, color: Colors.textSecondary, textAlign: 'center', lineHeight: 18 },
   yAxis: { width: Y_LABEL_WIDTH, position: 'relative' },
   yLabel: {
     position: 'absolute',

@@ -20,6 +20,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { useLogin } from '@/hooks/useAuth';
+import { authApi } from '@/api/auth';
 import * as Haptics from 'expo-haptics';
 import { isSmallDevice, hp } from '@/constants/Responsive';
 import { Analytics, EVENTS } from '@/utils/analytics';
@@ -29,7 +30,10 @@ export default function LoginScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [checking, setChecking] = useState(false);
+  const [identifierNotFound, setIdentifierNotFound] = useState(false);
   const passwordRef = useRef<TextInput>(null);
+  const checkingRef = useRef(false);
   const insets = useSafeAreaInsets();
 
   // Android: autoFocus inside a Modal is unreliable — manually focus after mount
@@ -42,42 +46,39 @@ export default function LoginScreen() {
 
   const login = useLogin();
 
-  // Clear stale error when the user edits the identifier field so the UI
-  // doesn't keep showing an old error message after they start re-typing.
+  // Clear stale errors when the user edits the identifier field.
   useEffect(() => {
     if (login.isError) login.reset();
+    if (identifierNotFound) setIdentifierNotFound(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [identifier]);
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (!identifier.trim()) {
       Alert.alert('Required', 'Please enter your email or account ID.');
       return;
     }
+    // Ref guard prevents duplicate calls from rapid taps before state re-renders
+    if (checkingRef.current) return;
+    checkingRef.current = true;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    // Defer reset() off the synchronous event-handler stack.
-    // Calling login.reset() synchronously here triggers a react-query state
-    // update while reanimated may have a UI frame pending, which races in
-    // RuntimeScheduler_Modern::updateRendering() and crashes on both simulator
-    // and physical device. A single-tick defer avoids the collision.
     setTimeout(() => login.reset(), 0);
-
-    // DEV MODE: skip the password modal entirely — the backend accepts
-    // passwordless logins when NODE_ENV=development (Expo Go / simulator).
-    if (__DEV__) {
-      login.mutate(
-        { email: identifier.trim(), password: '' },
-        {
-          onSuccess: () => Analytics.event(EVENTS.LOGIN_SUCCESS),
-          onError: (err: any) => Analytics.event(EVENTS.LOGIN_FAILED, {
-            reason: err?.response?.data?.code ?? err?.message ?? 'unknown',
-          }),
-        }
-      );
-      return;
+    setIdentifierNotFound(false);
+    setChecking(true);
+    try {
+      const { exists } = await authApi.checkIdentifier(identifier.trim());
+      if (!exists) {
+        setIdentifierNotFound(true);
+        return;
+      }
+      setModalVisible(true);
+    } catch {
+      // Network error — let them proceed and the password modal will surface it
+      setModalVisible(true);
+    } finally {
+      checkingRef.current = false;
+      setChecking(false);
     }
-
-    setModalVisible(true);
   };
 
   const handleSignIn = async () => {
@@ -96,8 +97,8 @@ export default function LoginScreen() {
     );
   };
 
-  const handleContactIR = () => {
-    Linking.openURL('mailto:investor.relations@qodeinvest.com?subject=Account Closure Enquiry');
+  const handleContactIR = (subject = 'Account Access Enquiry') => {
+    Linking.openURL(`mailto:investor.relations@qodeinvest.com?subject=${encodeURIComponent(subject)}`);
   };
 
   // Resolve a human-readable message from a login mutation error.
@@ -111,6 +112,8 @@ export default function LoginScreen() {
       return 'Your account password has not been set up yet. Please contact support to activate your account.';
     if (code === 'ACCOUNT_CLOSED')
       return 'ACCOUNT_CLOSED'; // sentinel — rendered as a special block below
+    if (code === 'USER_NOT_FOUND')
+      return 'USER_NOT_FOUND'; // sentinel — rendered as a special block below
     return data?.error ?? data?.message ?? 'Invalid credentials. Please try again.';
   })();
 
@@ -135,11 +138,6 @@ export default function LoginScreen() {
 
           {/* Card */}
           <View style={styles.card}>
-            {__DEV__ && (
-              <View style={styles.devBadge}>
-                <Text style={styles.devBadgeText}>DEV — no password required</Text>
-              </View>
-            )}
             <Ionicons name="mail-outline" size={32} color={Colors.primaryDark} style={styles.cardIcon} />
             <Text style={styles.welcomeTitle}>Welcome!</Text>
 
@@ -158,36 +156,45 @@ export default function LoginScreen() {
             />
 
             <TouchableOpacity
-              style={[styles.continueBtn, __DEV__ && login.isPending && styles.disabledBtn]}
+              style={[styles.continueBtn, checking && styles.disabledBtn]}
               onPress={handleContinue}
-              disabled={__DEV__ && login.isPending}
+              disabled={checking}
               activeOpacity={0.85}
             >
-              {__DEV__ && login.isPending
+              {checking
                 ? <ActivityIndicator color={Colors.white} />
                 : <Text style={styles.continueBtnText}>Continue</Text>
               }
             </TouchableOpacity>
 
-            {/* Error display for dev mode (modal never opens) and ACCOUNT_CLOSED
-                which can fire before the password modal even matters */}
-            {__DEV__ && loginErrorMessage === 'ACCOUNT_CLOSED' && (
+            {/* USER_NOT_FOUND — shown on main card before modal opens */}
+            {identifierNotFound && (
+              <View style={styles.closedBanner}>
+                <Ionicons name="person-remove-outline" size={20} color={Colors.negative} style={{ marginBottom: 6 }} />
+                <Text style={styles.closedBannerTitle}>Account Not Found</Text>
+                <Text style={styles.closedBannerBody}>
+                  No account found for this email or ID. If you believe this is an error, please reach out to our IR team.
+                </Text>
+                <TouchableOpacity onPress={() => handleContactIR('Account Access Enquiry')} style={styles.contactBtn} activeOpacity={0.8}>
+                  <Ionicons name="mail-outline" size={14} color={Colors.white} />
+                  <Text style={styles.contactBtnText}>Contact IR Team</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {/* ACCOUNT_CLOSED — shown on main card (password modal irrelevant) */}
+            {loginErrorMessage === 'ACCOUNT_CLOSED' && (
               <View style={styles.closedBanner}>
                 <Ionicons name="lock-closed-outline" size={20} color={Colors.negative} style={{ marginBottom: 6 }} />
                 <Text style={styles.closedBannerTitle}>Account Closed</Text>
                 <Text style={styles.closedBannerBody}>
                   Your portfolio account has been closed. If you think this is an error, please reach out to our IR team.
                 </Text>
-                <TouchableOpacity onPress={handleContactIR} style={styles.contactBtn} activeOpacity={0.8}>
+                <TouchableOpacity onPress={() => handleContactIR('Account Closure Enquiry')} style={styles.contactBtn} activeOpacity={0.8}>
                   <Ionicons name="mail-outline" size={14} color={Colors.white} />
                   <Text style={styles.contactBtnText}>Contact IR Team</Text>
                 </TouchableOpacity>
               </View>
-            )}
-            {__DEV__ && loginErrorMessage && loginErrorMessage !== 'ACCOUNT_CLOSED' && (
-              <Text style={[styles.errorText, { marginTop: 12, marginBottom: 0 }]}>
-                {loginErrorMessage}
-              </Text>
             )}
           </View>
 
@@ -202,7 +209,7 @@ export default function LoginScreen() {
       <Modal
         visible={modalVisible}
         animationType="slide"
-        presentationStyle={Platform.OS === 'ios' ? 'pageSheet' : 'fullScreen'}
+        presentationStyle="fullScreen"
         onRequestClose={() => setModalVisible(false)}
       >
         <KeyboardAvoidingView
@@ -257,13 +264,13 @@ export default function LoginScreen() {
               <Text style={styles.closedBannerBody}>
                 Your portfolio account has been closed. If you think this is an error, please reach out to our IR team.
               </Text>
-              <TouchableOpacity onPress={handleContactIR} style={styles.contactBtn} activeOpacity={0.8}>
+              <TouchableOpacity onPress={() => handleContactIR('Account Closure Enquiry')} style={styles.contactBtn} activeOpacity={0.8}>
                 <Ionicons name="mail-outline" size={14} color={Colors.white} />
                 <Text style={styles.contactBtnText}>Contact IR Team</Text>
               </TouchableOpacity>
             </View>
           )}
-          {loginErrorMessage && loginErrorMessage !== 'ACCOUNT_CLOSED' && (
+          {loginErrorMessage && loginErrorMessage !== 'ACCOUNT_CLOSED' && loginErrorMessage !== 'USER_NOT_FOUND' && (
             <Text style={styles.errorText}>{loginErrorMessage}</Text>
           )}
 

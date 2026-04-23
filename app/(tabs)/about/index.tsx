@@ -34,7 +34,7 @@ const CORE_VALUES = [
   { icon: 'eye-outline' as const, label: 'Transparency' },
   { icon: 'shield-checkmark-outline' as const, label: 'Discipline' },
   { icon: 'trending-up-outline' as const, label: 'Performance' },
-  { icon: 'handshake-outline' as const, label: 'Trust' },
+  { icon: 'people-outline' as const, label: 'Trust' },
 ];
 
 export default function PhilosophyScreen() {

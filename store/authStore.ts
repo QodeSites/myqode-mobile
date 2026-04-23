@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { User, Account } from '@/api/auth';
+import { User } from '@/api/auth';
 import * as SecureStore from 'expo-secure-store';
 import { IMPERSONATION_TOKEN_KEY } from '@/api/client';
 
@@ -12,16 +12,32 @@ export function strategyFromAccountId(accountId: string | null): StrategyKey {
   if (/^OWN/i.test(accountId)) return 'owner';
   if (/^GRP/i.test(accountId)) return 'family';
   const prefix = accountId.slice(0, 3).toUpperCase();
-  return STRATEGY_PREFIXES.includes(prefix) ? (prefix as StrategyKey) : 'all';
+  if (STRATEGY_PREFIXES.includes(prefix)) return prefix as StrategyKey;
+  // Numeric owner IDs (e.g. '50602') — not a strategy prefix, not OWN/GRP
+  if (/^\d/.test(accountId)) return 'owner';
+  return 'all';
 }
 
 function defaultAccountId(accountCodes: string[]): string | null {
-  // Prefer first individual strategy account; ignore OWN/GRP aggregates
-  return (
-    accountCodes.find((c) => STRATEGY_PREFIXES.some((p) => c.toUpperCase().startsWith(p))) ??
-    accountCodes[0] ??
-    null
+  if (!accountCodes.length) return null;
+
+  const strategyCodes = accountCodes.filter((c) =>
+    STRATEGY_PREFIXES.some((p) => c.toUpperCase().startsWith(p))
   );
+  // Owner IDs are numeric strings added by the login route (ownerid from DB).
+  // They are neither strategy prefixes nor GRP group codes.
+  const ownerCodes = accountCodes.filter(
+    (c) => !STRATEGY_PREFIXES.some((p) => c.toUpperCase().startsWith(p)) && !/^GRP/i.test(c)
+  );
+
+  // Multiple strategy accounts → default to the owner aggregate so the user
+  // lands on "All Strategies" rather than a single randomly-selected account.
+  if (strategyCodes.length > 1 && ownerCodes.length > 0) {
+    return ownerCodes[0];
+  }
+
+  // Single strategy account (or no owner code available) → select it directly.
+  return strategyCodes[0] ?? accountCodes[0] ?? null;
 }
 
 function accountIdForStrategy(strategy: StrategyKey, accountCodes: string[]): string | null {

@@ -8,6 +8,13 @@
     "device:lan": "expo start --dev-client --host lan",
     "android": "expo run:android",
     "ios": "expo run:ios",
+    "ios:simulator": "expo run:ios --simulator",
+    "ios:device": "expo run:ios --device",
+    "ios:release": "expo run:ios --configuration Release",
+    "ios:pods": "cd ios && pod install && cd ..",
+    "ios:clean": "cd ios && xcodebuild clean -workspace myQode.xcworkspace -scheme myQode && cd ..",
+    "ios:build": "eas build --platform ios --profile production --local",
+    "ios:submit": "eas submit --platform ios --latest",
     "web": "expo start --web",
     "postinstall": "patch-package"
   },

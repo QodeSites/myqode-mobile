@@ -53,7 +53,7 @@ function generateSessionId(): string {
 }
 
 const APP_VERSION: string =
-  (Constants.expoConfig?.version ?? Constants.manifest?.version ?? 'unknown');
+  (Constants.expoConfig?.version ?? (Constants.manifest as any)?.version ?? 'unknown');
 
 const PLATFORM: 'ios' | 'android' | 'web' =
   Platform.OS === 'ios' ? 'ios' : Platform.OS === 'android' ? 'android' : 'web';

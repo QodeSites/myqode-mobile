@@ -1,5 +1,5 @@
 export const API_BASE_URL =
-  process.env.EXPO_PUBLIC_API_URL || 'https://myqode.qodeinvest.com/api';
+  process.env.EXPO_PUBLIC_API_URL || 'https://myqode.qodeinvest.com/api/mobile';
 
 // Dev: 'https://njvbrnd9-2069.inc1.devtunnels.ms/api/mobile'
 
@@ -8,6 +8,7 @@ export const ENDPOINTS = {
   LOGIN: '/auth/login',
   LOGOUT: '/auth/logout',
   ME: '/auth/me',
+  CHECK_IDENTIFIER: '/auth/check-identifier',
 
   // Portfolio
   PERFORMANCE: '/portfolio/performance',

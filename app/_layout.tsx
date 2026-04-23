@@ -219,7 +219,7 @@ export default function RootLayout() {
                 <SafeAreaInsetsContext.Provider
                   value={isImpersonating ? { ...insets!, top: 0 } : insets!}
                 >
-                  <Stack screenOptions={{ headerShown: false }} style={{ flex: 1 }}>
+                  <Stack screenOptions={{ headerShown: false, contentStyle: { flex: 1 } }}>
                     <Stack.Screen name="(auth)" />
                     <Stack.Screen name="(tabs)" />
                     <Stack.Screen name="(admin)" />

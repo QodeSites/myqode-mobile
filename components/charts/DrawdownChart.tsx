@@ -67,10 +67,16 @@ export function DrawdownChart({ data, benchmarkName = 'Benchmark', loading = fal
   }));
 
   if (loading) return <ChartSkeleton />;
-  if (!data || data.length === 0) {
+  if (!data || data.length < 2) {
     return (
       <View style={[styles.empty, { height: CHART_HEIGHT }]}>
-        <Text style={styles.emptyText}>No drawdown data available</Text>
+        <Text style={styles.emptyTitle}>Data Updating</Text>
+        <Text style={styles.emptyText}>
+          {data && data.length === 1
+            ? 'Only 1 data point available so far.'
+            : 'No drawdown data available yet.'}
+          {'\n'}Since this account is new, please check back in 2–3 days once data has been populated.
+        </Text>
       </View>
     );
   }
@@ -87,16 +93,23 @@ export function DrawdownChart({ data, benchmarkName = 'Benchmark', loading = fal
     ...chartData.map((d) => d.portfolioDD),
     ...(hasBenchmark ? chartData.map((d) => d.benchmarkDD) : []),
   ];
-  const minDD = Math.min(...allDD);
+  // Clamp to at most -0.001 so the domain always has a non-zero range.
+  // If all values are 0 (new account / no drawdown yet) minDD would be 0,
+  // causing tickStep = 0 → infinite loop → RangeError.
+  const minDD = Math.min(Math.min(...allDD), -0.001);
   const yMin = minDD - Math.abs(minDD) * 0.08;
   const yMax = 0;
 
   const rawStep = Math.abs(minDD) / 3;
-  const magnitude = Math.pow(10, Math.floor(Math.log10(rawStep || 1)));
-  const tickStep = Math.ceil(rawStep / magnitude) * magnitude;
+  // Guard: rawStep could still round to 0 for near-zero values; ensure >= 0.001
+  const safeRawStep = Math.max(rawStep, 0.001);
+  const magnitude = Math.pow(10, Math.floor(Math.log10(safeRawStep)));
+  const tickStep = Math.max(Math.ceil(safeRawStep / magnitude) * magnitude, 0.001);
   const yTicks: number[] = [];
   for (let t = -tickStep; t >= yMin; t -= tickStep) {
     yTicks.push(parseFloat(t.toFixed(4)));
+    // Safety cap — should never exceed ~10 ticks, but guard regardless
+    if (yTicks.length > 20) break;
   }
 
   // Values read directly from data array (snaps to actual data points — correct and fast)
@@ -106,8 +119,15 @@ export function DrawdownChart({ data, benchmarkName = 'Benchmark', loading = fal
   const liveBenchmark = isActive ? (data[safeIdx]?.benchmarkDD ?? null) : null;
 
   const n = data.length;
-  const xTickIndices = Array.from({ length: X_TICK_COUNT }, (_, i) =>
-    Math.round((i / (X_TICK_COUNT - 1)) * (n - 1))
+  // Deduplicate so short datasets (< X_TICK_COUNT points) don't produce
+  // repeated indices — duplicate keys crash React and `data[idx]` would
+  // reference the same point multiple times anyway.
+  const xTickIndices = Array.from(
+    new Set(
+      Array.from({ length: X_TICK_COUNT }, (_, i) =>
+        Math.round((i / (X_TICK_COUNT - 1)) * (n - 1))
+      )
+    )
   );
 
   return (
@@ -240,7 +260,7 @@ export function DrawdownChart({ data, benchmarkName = 'Benchmark', loading = fal
         <View style={styles.xLabels}>
           {xTickIndices.map((idx, i) => (
             <Text
-              key={idx}
+              key={i}
               style={[
                 styles.xLabel,
                 i === 0 && { textAlign: 'left' },
@@ -291,7 +311,13 @@ const styles = StyleSheet.create({
   legendDot: { width: 8, height: 8, borderRadius: 4 },
   legendLabel: { ...Typography.Caption, color: Colors.textSecondary },
   empty: { justifyContent: 'center', alignItems: 'center' },
-  emptyText: { ...Typography.BodySmall, color: Colors.textSecondary },
+  emptyTitle: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 13,
+    color: Colors.textPrimary,
+    marginBottom: 6,
+  },
+  emptyText: { ...Typography.BodySmall, color: Colors.textSecondary, textAlign: 'center', lineHeight: 18 },
   yAxis: { width: Y_LABEL_WIDTH, position: 'relative' },
   yLabel: {
     position: 'absolute',

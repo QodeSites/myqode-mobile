@@ -51,16 +51,11 @@ export interface PortalGuideResponse {
 }
 
 export interface ReferralPayload {
-  refereeName: string;
-  refereePhone: string;
-  refereeEmail: string;
-  relationship: string;
-}
-
-export interface FeedbackPayload {
-  rating: number;
-  message: string;
-  category?: string;
+  accountId: string;
+  name: string;
+  phone: string;
+  email: string;
+  description?: string;
 }
 
 export const engagementApi = {
@@ -76,11 +71,6 @@ export const engagementApi = {
 
   submitReferral: async (payload: ReferralPayload) => {
     const res = await apiClient.post(ENDPOINTS.REFERRAL, payload);
-    return res.data;
-  },
-
-  submitFeedback: async (payload: FeedbackPayload) => {
-    const res = await apiClient.post(ENDPOINTS.FEEDBACK, payload);
     return res.data;
   },
 

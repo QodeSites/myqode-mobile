@@ -9,6 +9,8 @@ export const ENDPOINTS = {
   LOGOUT: '/auth/logout',
   ME: '/auth/me',
   CHECK_IDENTIFIER: '/auth/check-identifier',
+  FORGOT_PASSWORD: '/auth/forgot',
+  DEV_CLIENTS: '/dev/clients',
 
   // Portfolio
   PERFORMANCE: '/portfolio/performance',
@@ -76,4 +78,7 @@ export const ENDPOINTS = {
 
   // Push notifications
   REGISTER_PUSH_TOKEN: '/services/register-push-token',
+
+  // App version / force-update gate
+  APP_VERSION: '/app-version',
 } as const;

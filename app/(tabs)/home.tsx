@@ -8,6 +8,7 @@ import {
   TextInput,
   RefreshControl,
 } from 'react-native';
+import { AutoShrinkText } from '@/components/ui/AutoShrinkText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -100,7 +101,9 @@ function AccountRow({
           {account.isClosed ? (
             <Text style={styles.accountValueClosed}>—</Text>
           ) : (
-            <Text style={styles.accountValue}>{formatINR(account.totalValue, 0)}</Text>
+            <AutoShrinkText style={styles.accountValue} minimumFontScale={0.65}>
+              {formatINR(account.totalValue, 0)}
+            </AutoShrinkText>
           )}
           <Ionicons
             name={expanded ? 'chevron-up' : 'chevron-down'}
@@ -137,9 +140,9 @@ function AccountRow({
             )}
             <View style={[styles.detailItem, styles.detailItemFull]}>
               <Text style={styles.detailLabel}>Portfolio Value</Text>
-              <Text style={styles.detailValueBold}>
+              <AutoShrinkText style={styles.detailValueBold} minimumFontScale={0.65}>
                 {account.isClosed ? '—' : formatINR(account.totalValue, 0)}
-              </Text>
+              </AutoShrinkText>
             </View>
           </View>
           <TouchableOpacity style={styles.viewDetailBtn} onPress={onNavigate}>
@@ -187,7 +190,9 @@ function OwnerCard({
         </View>
         <View style={styles.ownerHeaderRight}>
           <View style={{ alignItems: 'flex-end' }}>
-            <Text style={styles.ownerValue}>{formatINR(owner.totalValue, 0)}</Text>
+            <AutoShrinkText style={styles.ownerValue} minimumFontScale={0.65}>
+              {formatINR(owner.totalValue, 0)}
+            </AutoShrinkText>
             <Text style={styles.ownerValueLabel}>Owner Total</Text>
           </View>
           <Ionicons
@@ -420,7 +425,9 @@ export default function HomeScreen() {
               </View>
             </View>
             <View style={styles.familyTotalRight}>
-              <Text style={styles.familyTotalValue}>{formatINR(totalValue, 0)}</Text>
+              <AutoShrinkText style={styles.familyTotalValue} minimumFontScale={0.65}>
+                {formatINR(totalValue, 0)}
+              </AutoShrinkText>
               <TouchableOpacity style={styles.viewDetailsBtn} onPress={handleFamilyDetail}>
                 <Text style={styles.viewDetailsBtnText}>View Details</Text>
                 <Ionicons name="arrow-forward" size={13} color={Colors.primaryDark} />
@@ -488,7 +495,9 @@ export default function HomeScreen() {
               </Text>
             </View>
             <View style={styles.summaryRight}>
-              <Text style={styles.summaryValue}>{formatINR(totalValue, 0)}</Text>
+              <AutoShrinkText style={styles.summaryValue} minimumFontScale={0.6}>
+                {formatINR(totalValue, 0)}
+              </AutoShrinkText>
               <Text style={styles.summaryActiveCount}>
                 {activeCount} Active Account{activeCount !== 1 ? 's' : ''}
               </Text>

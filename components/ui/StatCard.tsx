@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Colors } from '@/constants/Colors';
 import { Typography, cardShadow } from '@/constants/Typography';
 import { Ionicons } from '@expo/vector-icons';
+import { AutoShrinkText } from '@/components/ui/AutoShrinkText';
 
 interface StatCardProps {
   label: string;
@@ -22,12 +23,13 @@ export function StatCard({ label, value, subtitle, icon, valueColor, style }: St
           <Ionicons name={icon} size={14} color={Colors.textSecondary} style={styles.icon} />
         )}
       </View>
-      <Text
+      <AutoShrinkText
         style={[styles.value, { color: valueColor ?? Colors.textPrimary }]}
         allowFontScaling={false}
+        minimumFontScale={0.6}
       >
         {value}
-      </Text>
+      </AutoShrinkText>
       {subtitle && (
         <Text style={styles.subtitle} numberOfLines={2}>{subtitle}</Text>
       )}

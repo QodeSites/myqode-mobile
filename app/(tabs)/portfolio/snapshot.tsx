@@ -20,6 +20,7 @@ import { StrategySelector } from '@/components/ui/StrategySelector';
 import { formatINR } from '@/utils/formatCurrency';
 import { StatusPill } from '@/components/ui/StatusPill';
 import { formatDate } from '@/utils/formatDate';
+import { AutoShrinkText } from '@/components/ui/AutoShrinkText';
 
 function SnapshotRow({
   node,
@@ -92,7 +93,9 @@ function SnapshotRow({
           </View>
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Portfolio Value</Text>
-            <Text style={styles.detailValueBold}>{formatINR(node.totalValue)}</Text>
+            <AutoShrinkText style={styles.detailValueBold} minimumFontScale={0.65}>
+              {formatINR(node.totalValue)}
+            </AutoShrinkText>
           </View>
         </View>
       )}
@@ -178,7 +181,9 @@ function AccountCard({ account }: { account: SnapshotNode }) {
           </View>
           <View style={[styles.detailRow, { borderBottomWidth: 0 }]}>
             <Text style={styles.detailLabel}>Portfolio Value</Text>
-            <Text style={styles.detailValueBold}>{formatINR(account.totalValue)}</Text>
+            <AutoShrinkText style={styles.detailValueBold} minimumFontScale={0.65}>
+              {formatINR(account.totalValue)}
+            </AutoShrinkText>
           </View>
         </View>
       )}
@@ -306,7 +311,9 @@ export default function SnapshotScreen() {
         {snapshot.data && (
           <View style={styles.summaryCard}>
             <Text style={styles.summaryLabel}>Active Portfolio Value</Text>
-            <Text style={styles.summaryValue}>{formatINR(activeTotal)}</Text>
+            <AutoShrinkText style={styles.summaryValue} minimumFontScale={0.6}>
+              {formatINR(activeTotal)}
+            </AutoShrinkText>
             <Text style={styles.summaryAccounts}>{activeCount} Active Account{activeCount !== 1 ? 's' : ''}</Text>
           </View>
         )}

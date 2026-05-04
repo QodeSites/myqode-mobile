@@ -34,6 +34,15 @@ export const authApi = {
     return res.data;
   },
 
+  forgotPassword: async (email: string): Promise<{ success: boolean; message: string }> => {
+    const res = await apiClient.post<{ success: boolean; message: string }>(
+      ENDPOINTS.FORGOT_PASSWORD,
+      { email: email.trim().toLowerCase() },
+      { timeout: 10_000 }
+    );
+    return res.data;
+  },
+
   login: async (payload: LoginPayload): Promise<LoginResponse> => {
     const res = await apiClient.post<LoginResponse>(ENDPOINTS.LOGIN, payload);
     return res.data;

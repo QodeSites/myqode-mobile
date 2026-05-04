@@ -136,7 +136,7 @@ export function DatePickerInput({
           </View>
 
           {!isDateValid() && (
-            <Text style={styles.errorHint}>Date must be today or in the future.</Text>
+            <Text style={styles.errorHint}>Date must be tomorrow or in the future.</Text>
           )}
 
           {/* Three columns */}

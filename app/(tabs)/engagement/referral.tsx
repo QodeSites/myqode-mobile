@@ -16,6 +16,7 @@ import { useMutation } from '@tanstack/react-query';
 import { Colors } from '@/constants/Colors';
 import { Typography, cardShadow } from '@/constants/Typography';
 import { engagementApi, ReferralPayload } from '@/api/engagement';
+import { useAuthStore } from '@/store/authStore';
 
 const HOW_IT_WORKS = [
   {
@@ -58,6 +59,10 @@ interface FieldErrors {
 }
 
 export default function ReferralScreen() {
+  const user = useAuthStore((s) => s.user);
+  const selectedAccountId = useAuthStore((s) => s.selectedAccountId);
+  const accountId = selectedAccountId ?? user?.accountCodes?.[0] ?? '';
+
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
@@ -102,10 +107,11 @@ export default function ReferralScreen() {
   const handleSubmit = () => {
     if (!validate()) return;
     referralMutation.mutate({
-      refereeName: name.trim(),
-      refereePhone: phone.trim(),
-      refereeEmail: email.trim(),
-      relationship: relationship.trim(),
+      accountId,
+      name: name.trim(),
+      phone: phone.trim(),
+      email: email.trim(),
+      description: relationship.trim() || undefined,
     });
   };
 

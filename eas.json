@@ -32,5 +32,13 @@
         "buildType": "app-bundle"
       }
     }
+  },
+  "submit": {
+    "production": {
+      "ios": {
+        "appleId": "tech@qodeinvest.com",
+        "appleTeamId": "U3H68NKMV6"
+      }
+    }
   }
 }

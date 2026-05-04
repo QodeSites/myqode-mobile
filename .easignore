@@ -1,0 +1,54 @@
+# Everything from .gitignore
+node_modules/
+node_modules
+node_modules/**
+# Duplicate node_modules folder (space in name — not matched by the pattern above)
+node_modules 2/
+node_modules 2
+.expo/
+.expo
+.expo/**
+dist/
+dist
+dist/**
+web-build/
+web-build
+web-build/**
+expo-env.d.ts
+android/
+android
+android/**
+ios/
+ios
+ios/**
+*.apk
+*.aab
+*.ipa
+.env
+.env.local
+.env.*.local
+.DS_Store
+Thumbs.db
+.vscode/
+.vscode
+.vscode/**
+.idea/
+.idea
+.idea/**
+*.log
+npm-debug.log*
+*.tsbuildinfo
+.claude/
+.claude
+.claude/**
+# Dev/doc files not needed in build archive
+# Use explicit root-relative paths so these never match app/(tabs)/docs or similar
+/docs/
+/docs
+PROJECT_SUMMARY.md
+SETUP.md
+SPLASH_SCREEN_FIX.md
+# Data files — should never be in a build artifact
+closed_accounts.xlsx
+*.xlsx
+*.csv

@@ -55,7 +55,7 @@ function loadCashfreeSDK(): boolean {
   if (_nativeAvailable !== null) return _nativeAvailable;
   // NativeModules check avoids the Invariant Violation that require() throws in Expo Go
   // when a native module isn't linked — unlike try/catch, this check is safe to call.
-  if (!NativeModules.CFPaymentGatewayService) {
+  if (!NativeModules.CashfreePgApi) {
     _nativeAvailable = false;
     return false;
   }

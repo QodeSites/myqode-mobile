@@ -25,6 +25,7 @@ import { DatePickerInput } from '@/components/ui/DatePickerInput';
 import { useCashfreePayment } from '@/hooks/useCashfreePayment';
 import { formatINR } from '@/utils/formatCurrency';
 import { formatDate } from '@/utils/formatDate';
+import { AutoShrinkText } from '@/components/ui/AutoShrinkText';
 
 type Tab = 'onetime' | 'sip' | 'new-strategy' | 'switch' | 'withdrawal';
 
@@ -52,11 +53,22 @@ function OneTimeTab({
 }: {
   orderType: 'ONE_TIME' | 'NEW_STRATEGY';
 }) {
-  const [amountStr, setAmountStr] = useState('');
-  const [strategyType, setStrategyType] = useState<string>('QAW');
   const createOrder = useCreateOrder();
-  const { launchPayment, handlePaymentVerified, handlePaymentFailed, isProcessing } = useCashfreePayment();
+  const { launchPayment, isProcessing } = useCashfreePayment();
   const selectedAccountId = useAuthStore((s) => s.selectedAccountId);
+  const selectedStrategy = useAuthStore((s) => s.selectedStrategy);
+
+  // Determine the strategy the user is currently invested in (for NEW_STRATEGY only).
+  // 'all', 'owner', 'family' are aggregate views — not a concrete strategy, so no restriction.
+  const concreteStrategies = STRATEGIES as readonly string[];
+  const currentStrategy: string | null = concreteStrategies.includes(selectedStrategy)
+    ? selectedStrategy
+    : null;
+
+  // Pre-select the first strategy that isn't their current one.
+  const defaultNewStrategy = STRATEGIES.find((s) => s !== currentStrategy) ?? 'QTF';
+  const [amountStr, setAmountStr] = useState('');
+  const [strategyType, setStrategyType] = useState<string>(defaultNewStrategy);
 
   const amount = parseInt(amountStr, 10) || 0;
   const isValid = amount >= 100 && !!selectedAccountId;
@@ -81,9 +93,10 @@ function OneTimeTab({
         // calls verifyOrder and refreshes caches. We navigate to Orders after launch
         // so the user can track progress as soon as the payment sheet closes.
         launchPayment(data.paymentSessionId, data.orderId, data.environment ?? 'sandbox');
-        // Navigate to the Orders tab so the user sees the new order in-progress.
-        // Use a short delay so the payment sheet has time to open first.
-        setTimeout(() => router.replace('/(tabs)/invest' as any), 400);
+        // Do NOT navigate away here — the Cashfree SDK presents a modal view
+        // controller over the current screen and navigating now would dismiss it
+        // before the payment sheet appears. Navigation to Orders happens in the
+        // global Cashfree callback in _layout.tsx once the sheet closes.
       },
       onError: (err: any) => {
         Alert.alert('Order Failed', err?.response?.data?.message ?? err?.message ?? 'Failed to create order. Please try again.');
@@ -95,23 +108,39 @@ function OneTimeTab({
     <View style={styles.form}>
       {orderType === 'NEW_STRATEGY' && (
         <View style={styles.fieldBlock}>
-          <Text style={styles.fieldLabel}>Select Strategy</Text>
+          <Text style={styles.fieldLabel}>Select New Strategy</Text>
+          {currentStrategy && (
+            <Text style={styles.hint}>
+              You are currently invested in <Text style={{ color: Colors.primaryDark, fontFamily: 'Inter_600SemiBold' }}>{currentStrategy}</Text>. Choose a different strategy below.
+            </Text>
+          )}
           <View style={styles.strategyRow}>
-            {STRATEGIES.map((s) => (
-              <TouchableOpacity
-                key={s}
-                style={[styles.strategyChip, strategyType === s && styles.strategyChipActive]}
-                onPress={() => setStrategyType(s)}
-                activeOpacity={0.8}
-              >
-                <Text style={[styles.strategyChipText, strategyType === s && styles.strategyChipTextActive]}>
-                  {s}
-                </Text>
-                <Text style={[styles.strategyChipSub, strategyType === s && styles.strategyChipTextActive]}>
-                  {STRATEGY_NAMES[s]}
-                </Text>
-              </TouchableOpacity>
-            ))}
+            {STRATEGIES.map((s) => {
+              const isCurrent = s === currentStrategy;
+              const isSelected = strategyType === s;
+              return (
+                <TouchableOpacity
+                  key={s}
+                  style={[
+                    styles.strategyChip,
+                    isSelected && styles.strategyChipActive,
+                    isCurrent && styles.strategyChipDisabled,
+                  ]}
+                  onPress={() => !isCurrent && setStrategyType(s)}
+                  activeOpacity={isCurrent ? 1 : 0.8}
+                >
+                  <Text style={[styles.strategyChipText, isSelected && styles.strategyChipTextActive]}>
+                    {s}
+                  </Text>
+                  <Text style={[styles.strategyChipSub, isSelected && styles.strategyChipTextActive]}>
+                    {STRATEGY_NAMES[s]}
+                  </Text>
+                  {isCurrent && (
+                    <Text style={styles.currentBadge}>Current</Text>
+                  )}
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </View>
       )}
@@ -137,7 +166,9 @@ function OneTimeTab({
             onPress={() => setAmountStr(String(a))}
             activeOpacity={0.75}
           >
-            <Text style={styles.quickBtnText}>{formatINR(a)}</Text>
+            <AutoShrinkText style={styles.quickBtnText} minimumFontScale={0.7}>
+              {formatINR(a)}
+            </AutoShrinkText>
           </TouchableOpacity>
         ))}
       </View>
@@ -145,7 +176,9 @@ function OneTimeTab({
       {amount >= 100 && (
         <View style={styles.summaryRow}>
           <Text style={styles.summaryLabel}>You will invest</Text>
-          <Text style={styles.summaryValue}>{formatINR(amount)}</Text>
+          <AutoShrinkText style={styles.summaryValue} minimumFontScale={0.65}>
+            {formatINR(amount)}
+          </AutoShrinkText>
         </View>
       )}
 
@@ -190,8 +223,12 @@ function SipTab() {
   const amount = parseInt(amountStr, 10) || 0;
   // Compare as ISO strings (YYYY-MM-DD) to avoid UTC-vs-local timezone offset.
   // 'today' in local time is always YYYY-MM-DD regardless of UTC offset.
-  const todayStr = new Date().toLocaleDateString('en-CA'); // en-CA gives YYYY-MM-DD in local time
-  const isValidDate = /^\d{4}-\d{2}-\d{2}$/.test(startDate) && startDate >= todayStr;
+  // Backend requires startDate >= tomorrow (Cashfree rejects same-day mandates).
+  // Use en-CA locale for YYYY-MM-DD format in local time regardless of timezone.
+  const tomorrowDate = new Date();
+  tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+  const tomorrowStr = tomorrowDate.toLocaleDateString('en-CA');
+  const isValidDate = /^\d{4}-\d{2}-\d{2}$/.test(startDate) && startDate >= tomorrowStr;
   const isValid = amount >= 100 && !!selectedAccountId && isValidDate;
   const isBusy = setupSip.isPending || isProcessing;
 
@@ -216,8 +253,9 @@ function SipTab() {
           // Launch the Cashfree subscription mandate authorization sheet.
           // The user must authorize via UPI/banking to activate the SIP.
           launchSipMandate(data.subscriptionSessionId, data.subscriptionId, data.environment ?? 'sandbox');
-          // Navigate to SIP Management after launching so the user can see the new SIP.
-          setTimeout(() => router.replace('/(tabs)/invest/sip-management' as any), 400);
+          // Do NOT navigate away here — the Cashfree SDK presents a mandate sheet over
+          // the current screen. Navigation to SIP Management happens in the global
+          // Cashfree callback in _layout.tsx once the mandate sheet closes.
         },
         onError: (err: any) => {
           Alert.alert('SIP Setup Failed', err?.response?.data?.message ?? err?.message ?? 'Failed to set up SIP. Please try again.');
@@ -269,10 +307,11 @@ function SipTab() {
         <DatePickerInput
           value={startDate}
           onChange={setStartDate}
+          minDate={tomorrowDate}
           label="SIP Start Date"
           placeholder="Select start date"
         />
-        <Text style={styles.hint}>Must be today or a future date.</Text>
+        <Text style={styles.hint}>Must be tomorrow or a future date.</Text>
       </View>
 
       {amount >= 100 && isValidDate && (
@@ -305,15 +344,24 @@ function SipTab() {
 
 // ─── Switch Strategy ──────────────────────────────────────────────────────────
 function SwitchTab() {
-  const currentStrategy = useAuthStore((s) => s.selectedStrategy);
-  // Pre-select the user's current strategy; fall back to QAW if not a concrete strategy
-  const defaultInvestedIn = STRATEGIES.includes(currentStrategy as any) ? currentStrategy : 'QAW';
+  const selectedStrategyRaw = useAuthStore((s) => s.selectedStrategy);
+  const selectedAccountId = useAuthStore((s) => s.selectedAccountId);
+
+  // Derive the concrete strategy they're currently invested in from their selected account.
+  // 'all', 'owner', 'family' are aggregate views — fall back to letting them pick manually.
+  const concreteStrategies = STRATEGIES as readonly string[];
+  const detectedStrategy: string | null = concreteStrategies.includes(selectedStrategyRaw)
+    ? selectedStrategyRaw
+    : null;
+
+  const defaultInvestedIn = detectedStrategy ?? 'QAW';
   const defaultSwitchTo = STRATEGIES.find((s) => s !== defaultInvestedIn) ?? 'QTF';
+
   const [investedIn, setInvestedIn] = useState<string>(defaultInvestedIn);
   const [switchTo, setSwitchTo] = useState<string>(defaultSwitchTo);
 
-  // When the user changes "Currently Invested In", if the new value collides with
-  // "Switch To", automatically move "Switch To" to the next available strategy.
+  // When the user manually changes "Currently Invested In" (only shown when we can't auto-detect),
+  // ensure "Switch To" never collides with it.
   const handleSetInvestedIn = (s: string) => {
     setInvestedIn(s);
     if (s === switchTo) {
@@ -321,11 +369,11 @@ function SwitchTab() {
       setSwitchTo(next);
     }
   };
+
   const [amountStr, setAmountStr] = useState('');
   const [reason, setReason] = useState('');
   const [notes, setNotes] = useState('');
   const switchStrategy = useSwitchStrategy();
-  const selectedAccountId = useAuthStore((s) => s.selectedAccountId);
   const [submitted, setSubmitted] = useState(false);
 
   const amount = parseInt(amountStr, 10) || 0;
@@ -373,18 +421,31 @@ function SwitchTab() {
     <View style={styles.form}>
       <View style={styles.fieldBlock}>
         <Text style={styles.fieldLabel}>Currently Invested In</Text>
-        <View style={styles.strategyRow}>
-          {STRATEGIES.map((s) => (
-            <TouchableOpacity
-              key={s}
-              style={[styles.strategyChip, investedIn === s && styles.strategyChipActive]}
-              onPress={() => handleSetInvestedIn(s)}
-              activeOpacity={0.8}
-            >
-              <Text style={[styles.strategyChipText, investedIn === s && styles.strategyChipTextActive]}>{s}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+        {detectedStrategy ? (
+          // Auto-detected from selected account — show read-only info
+          <View style={styles.detectedStrategyRow}>
+            <View style={styles.detectedStrategyBadge}>
+              <Ionicons name="checkmark-circle" size={14} color={Colors.positive} />
+              <Text style={styles.detectedStrategyText}>{detectedStrategy}</Text>
+              <Text style={styles.detectedStrategyName}>{STRATEGY_NAMES[detectedStrategy]}</Text>
+            </View>
+            <Text style={styles.detectedStrategyHint}>Auto-detected from your selected account</Text>
+          </View>
+        ) : (
+          // Can't auto-detect — let them pick manually
+          <View style={styles.strategyRow}>
+            {STRATEGIES.map((s) => (
+              <TouchableOpacity
+                key={s}
+                style={[styles.strategyChip, investedIn === s && styles.strategyChipActive]}
+                onPress={() => handleSetInvestedIn(s)}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.strategyChipText, investedIn === s && styles.strategyChipTextActive]}>{s}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
       </View>
 
       <View style={styles.fieldBlock}>
@@ -574,10 +635,14 @@ function WithdrawalTab() {
   );
 }
 
+const INDIVIDUAL_STRATEGIES = ['QAW', 'QTF', 'QGF', 'QFH'];
+
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 export default function AddFundsScreen() {
   const [activeTab, setActiveTab] = useState<Tab>('onetime');
   const isClosed = useIsSelectedAccountClosed();
+  const selectedStrategy = useAuthStore((s) => s.selectedStrategy);
+  const isAggregateScope = !INDIVIDUAL_STRATEGIES.includes(selectedStrategy);
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
@@ -623,7 +688,15 @@ export default function AddFundsScreen() {
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={styles.scroll}
         >
-          {isClosed ? (
+          {isAggregateScope ? (
+            <View style={styles.aggregateGate}>
+              <Ionicons name="person-outline" size={40} color={Colors.border} />
+              <Text style={styles.aggregateGateTitle}>Select an Individual Account</Text>
+              <Text style={styles.aggregateGateText}>
+                Investments and SIPs must be made into a specific account. Tap the account selector above and choose an individual strategy account.
+              </Text>
+            </View>
+          ) : isClosed ? (
             <View style={styles.closedState}>
               <Ionicons name="lock-closed-outline" size={40} color={Colors.border} />
               <Text style={styles.closedStateTitle}>Account Closed</Text>
@@ -738,6 +811,49 @@ const styles = StyleSheet.create({
   strategyChipText: { ...Typography.BodySmall, color: Colors.textPrimary, fontFamily: 'Inter_600SemiBold' },
   strategyChipSub: { ...Typography.Caption, color: Colors.textSecondary, marginTop: 2 },
   strategyChipTextActive: { color: Colors.white },
+  detectedStrategyRow: {
+    gap: 6,
+  },
+  detectedStrategyBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: Colors.lightGreen,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: Colors.positive + '40',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    alignSelf: 'flex-start',
+  },
+  detectedStrategyText: {
+    ...Typography.Body,
+    color: Colors.primaryDark,
+    fontFamily: 'Inter_700Bold',
+  },
+  detectedStrategyName: {
+    ...Typography.Caption,
+    color: Colors.textSecondary,
+    fontFamily: 'Inter_500Medium',
+  },
+  detectedStrategyHint: {
+    ...Typography.Caption,
+    color: Colors.textSecondary,
+    fontStyle: 'italic' as const,
+  },
+  currentBadge: {
+    fontSize: 8,
+    fontFamily: 'Inter_600SemiBold',
+    color: Colors.textSecondary,
+    textTransform: 'uppercase' as const,
+    letterSpacing: 0.4,
+    marginTop: 2,
+    backgroundColor: Colors.border,
+    borderRadius: 4,
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    overflow: 'hidden' as const,
+  },
   freqRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
   freqChip: {
     paddingHorizontal: 14,
@@ -807,4 +923,7 @@ const styles = StyleSheet.create({
   closedState: { alignItems: 'center', paddingVertical: 60, gap: 14, paddingHorizontal: 24 },
   closedStateTitle: { ...Typography.H2, color: Colors.textPrimary },
   closedStateText: { ...Typography.Body, color: Colors.textSecondary, textAlign: 'center', lineHeight: 20 },
+  aggregateGate: { alignItems: 'center', paddingVertical: 60, gap: 14, paddingHorizontal: 24 },
+  aggregateGateTitle: { ...Typography.H2, color: Colors.textPrimary },
+  aggregateGateText: { ...Typography.Body, color: Colors.textSecondary, textAlign: 'center', lineHeight: 20 },
 });

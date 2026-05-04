@@ -24,14 +24,6 @@ export interface BankDetails {
   copyText?: string;
 }
 
-export interface AddFundsPayload {
-  accountId: string;
-  amount: number;
-  type: 'SIP' | 'Lumpsum';
-  frequency?: 'Monthly' | 'Quarterly';
-  startDate?: string;
-}
-
 export interface SwitchPayload {
   accountId: string;
   investedIn: string;
@@ -112,11 +104,6 @@ export const servicesApi = {
     const res = await apiClient.get<{ transactions: Transaction[]; lastUpdated: string }>(ENDPOINTS.TRANSACTIONS, {
       params: { accountId },
     });
-    return res.data;
-  },
-
-  addFunds: async (payload: AddFundsPayload) => {
-    const res = await apiClient.post(ENDPOINTS.ADD_FUNDS, payload);
     return res.data;
   },
 

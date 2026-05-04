@@ -1,5 +1,5 @@
-import { useEffect, useRef } from 'react';
-import { View, AppState, AppStateStatus } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { View, AppState, AppStateStatus, Alert } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -22,12 +22,32 @@ import { useAuthStore } from '@/store/authStore';
 import { authApi } from '@/api/auth';
 import { paymentsApi } from '@/api/payments';
 import { ImpersonationBanner } from '@/components/ui/ImpersonationBanner';
+import { ForceUpdateModal } from '@/components/ui/ForceUpdateModal';
 import { registerCashfreeCallback, getPendingSipId, setPendingSipId } from '@/hooks/useCashfreePayment';
-import { Alert } from 'react-native';
 import { Analytics } from '@/utils/analytics';
-import { API_BASE_URL } from '@/constants/Api';
+import { API_BASE_URL, ENDPOINTS } from '@/constants/Api';
 import { registerForPushNotifications } from '@/utils/pushNotifications';
+import Constants from 'expo-constants';
 import '../global.css';
+
+// ── Semver comparison ────────────────────────────────────────────────────────
+// Returns true if `a` is strictly less than `b` (both "x.y.z" strings).
+function semverLt(a: string, b: string): boolean {
+  const parse = (v: string) => v.split('.').map((n) => parseInt(n, 10) || 0);
+  const [aMaj, aMin, aPat] = parse(a);
+  const [bMaj, bMin, bPat] = parse(b);
+  if (aMaj !== bMaj) return aMaj < bMaj;
+  if (aMin !== bMin) return aMin < bMin;
+  return aPat < bPat;
+}
+
+interface AppVersionInfo {
+  minVersion: string;
+  latestVersion: string;
+  forceUpdate: boolean;
+  message: string;
+  updateUrls: { ios: string; android: string };
+}
 
 SplashScreen.preventAutoHideAsync();
 
@@ -59,6 +79,11 @@ export default function RootLayout() {
   const isHydrated = useAuthStore((s) => s.isHydrated);
   const isImpersonating = useAuthStore((s) => s.isImpersonating);
   const user = useAuthStore((s) => s.user);
+
+  // ── Force-update state ────────────────────────────────────────────────────
+  const [updateInfo, setUpdateInfo] = useState<AppVersionInfo | null>(null);
+  const [updateModalVisible, setUpdateModalVisible] = useState(false);
+  const [isForceUpdate, setIsForceUpdate] = useState(false);
 
   useEffect(() => {
     async function bootstrap() {
@@ -117,6 +142,31 @@ export default function RootLayout() {
     }
   }, [fontsLoaded, fontError, isHydrated]);
 
+  // ── Version check — runs once on mount, non-blocking ─────────────────────
+  useEffect(() => {
+    async function checkAppVersion() {
+      try {
+        const res = await fetch(`${API_BASE_URL}${ENDPOINTS.APP_VERSION}`);
+        if (!res.ok) return; // silently ignore server errors
+
+        const data: AppVersionInfo = await res.json();
+        const installedVersion = Constants.expoConfig?.version ?? '0.0.0';
+
+        const needsForceUpdate = data.forceUpdate || semverLt(installedVersion, data.minVersion);
+        const needsSoftUpdate  = !needsForceUpdate && semverLt(installedVersion, data.latestVersion);
+
+        if (needsForceUpdate || needsSoftUpdate) {
+          setUpdateInfo(data);
+          setIsForceUpdate(needsForceUpdate);
+          setUpdateModalVisible(true);
+        }
+      } catch {
+        // Network error or parse failure — never block the user
+      }
+    }
+    checkAppVersion();
+  }, []);
+
   // Register global Cashfree SDK callback once on mount.
   // The same callback fires for both one-time payments AND SIP mandate authorisations.
   // We distinguish them via getPendingSipId() — set by launchSipMandate before the SDK opens.
@@ -136,6 +186,8 @@ export default function RootLayout() {
           }
           queryClient.invalidateQueries({ queryKey: ['payments', 'investment-status'] });
           queryClient.invalidateQueries({ queryKey: ['services', 'transactions'] });
+          // Navigate to SIP Management so the user can see the new SIP status.
+          router.replace('/(tabs)/invest/sip-management' as any);
         } else {
           // ── One-time / new-strategy payment completed ──────────────────────
           try {
@@ -145,6 +197,8 @@ export default function RootLayout() {
           }
           queryClient.invalidateQueries({ queryKey: ['payments', 'investment-status'] });
           queryClient.invalidateQueries({ queryKey: ['services', 'transactions'] });
+          // Navigate to Orders so the user can see the new order status.
+          router.replace('/(tabs)/invest' as any);
         }
       },
       (_error, callbackId) => {
@@ -159,6 +213,13 @@ export default function RootLayout() {
             : `Your payment for order ${callbackId} was not completed. You can retry from the Invest screen.`,
           [{ text: 'OK' }],
         );
+        // Navigate away so the add-funds screen unmounts and isProcessing resets,
+        // allowing the user to retry without getting stuck on a disabled button.
+        if (isSip) {
+          router.replace('/(tabs)/invest/sip-management' as any);
+        } else {
+          router.replace('/(tabs)/invest' as any);
+        }
       },
     );
   }, []);
@@ -229,6 +290,19 @@ export default function RootLayout() {
             </SafeAreaInsetsContext.Consumer>
           </View>
           <StatusBar style="auto" />
+
+          {/* Force-update / soft-update modal — rendered outside the Stack so it
+              overlays everything including modals opened by individual screens.   */}
+          {updateInfo && (
+            <ForceUpdateModal
+              visible={updateModalVisible}
+              forceUpdate={isForceUpdate}
+              latestVersion={updateInfo.latestVersion}
+              message={updateInfo.message}
+              updateUrls={updateInfo.updateUrls}
+              onDismiss={isForceUpdate ? undefined : () => setUpdateModalVisible(false)}
+            />
+          )}
         </QueryClientProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

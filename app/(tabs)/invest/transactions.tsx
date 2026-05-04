@@ -17,6 +17,7 @@ import { StrategySelector } from '@/components/ui/StrategySelector';
 import { formatDate } from '@/utils/formatDate';
 import { formatINR } from '@/utils/formatCurrency';
 import { Transaction } from '@/api/services';
+import { AutoShrinkText } from '@/components/ui/AutoShrinkText';
 
 const STATUS_COLORS: Record<string, string> = {
   PAID: Colors.positive,
@@ -53,9 +54,12 @@ function TransactionRow({ tx }: { tx: Transaction }) {
       <View style={styles.rowBody}>
         <View style={styles.rowTop}>
           <Text style={styles.rowLabel}>{typeLabel}</Text>
-          <Text style={[styles.rowAmount, { color: isDebit ? Colors.negative : Colors.positive }]}>
-            {isDebit ? '-' : '+'}{formatINR(tx.amount)}
-          </Text>
+          <AutoShrinkText
+            style={[styles.rowAmount, { color: isDebit ? Colors.negative : Colors.positive }]}
+            minimumFontScale={0.65}
+          >
+            {`${isDebit ? '−' : '+'}${formatINR(tx.amount)}`}
+          </AutoShrinkText>
         </View>
         <View style={styles.rowBottom}>
           <Text style={styles.rowId} numberOfLines={1}>{tx.orderId}</Text>

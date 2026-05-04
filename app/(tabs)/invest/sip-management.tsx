@@ -20,6 +20,7 @@ import { useAuthStore } from '@/store/authStore';
 import { formatDate } from '@/utils/formatDate';
 import { formatINR } from '@/utils/formatCurrency';
 import { Transaction } from '@/api/services';
+import { AutoShrinkText } from '@/components/ui/AutoShrinkText';
 
 const SIP_STATUS_COLORS: Record<string, string> = {
   ACTIVE: Colors.positive,
@@ -111,7 +112,9 @@ function SipCard({ sip, accountId }: { sip: Transaction; accountId: string }) {
           <Ionicons name="repeat-outline" size={18} color={Colors.primaryDark} />
         </View>
         <View style={styles.sipHeaderInfo}>
-          <Text style={styles.sipAmount}>{formatINR(sip.amount)}</Text>
+          <AutoShrinkText style={styles.sipAmount} minimumFontScale={0.65}>
+            {formatINR(sip.amount)}
+          </AutoShrinkText>
           <Text style={styles.sipFreq}>
             {sip.frequency ? (FREQUENCY_LABELS[sip.frequency] ?? sip.frequency) : 'SIP'}
           </Text>

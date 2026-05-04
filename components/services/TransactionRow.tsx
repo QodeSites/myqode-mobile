@@ -7,6 +7,7 @@ import { Transaction } from '@/api/services';
 import { StatusPill } from '@/components/ui/StatusPill';
 import { formatINR } from '@/utils/formatCurrency';
 import { formatDate } from '@/utils/formatDate';
+import { AutoShrinkText } from '@/components/ui/AutoShrinkText';
 
 interface TransactionRowProps {
   transaction: Transaction;
@@ -45,9 +46,9 @@ export function TransactionRow({ transaction: t }: TransactionRowProps) {
       </View>
 
       <View style={styles.mid}>
-        <Text style={[styles.amount, { color: amountColor }]}>
-          {meta.isDebit ? '−' : '+'}{formatINR(t.amount)}
-        </Text>
+        <AutoShrinkText style={[styles.amount, { color: amountColor }]} minimumFontScale={0.65}>
+          {`${meta.isDebit ? '−' : '+'}${formatINR(t.amount)}`}
+        </AutoShrinkText>
         <Text style={styles.date}>{formatDate(t.date, 'short')}</Text>
         <StatusPill status={t.status} />
       </View>

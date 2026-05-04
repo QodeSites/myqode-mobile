@@ -6,6 +6,7 @@ import { MonthlyPL } from '@/api/portfolio';
 import { formatPercent } from '@/utils/formatPercent';
 import { formatINR } from '@/utils/formatCurrency';
 import { isSmallDevice, isTablet } from '@/constants/Responsive';
+import { AutoShrinkText } from '@/components/ui/AutoShrinkText';
 
 interface MonthlyPLTableProps {
   data: MonthlyPL[];
@@ -29,8 +30,15 @@ function PLCell({ value, mode }: { value: number | null | undefined; mode: 'perc
   }
   const color = value > 0 ? Colors.positive : value < 0 ? Colors.negative : Colors.textPrimary;
   const display = mode === 'percent' ? formatPercent(value) : formatINR(value, 0);
-  // No numberOfLines — full value must always be visible
-  return <Text style={[styles.valueCell, { color }]} allowFontScaling={false}>{display}</Text>;
+  return (
+    <AutoShrinkText
+      style={[styles.valueCell, { color }]}
+      allowFontScaling={false}
+      minimumFontScale={0.6}
+    >
+      {`${display}`}
+    </AutoShrinkText>
+  );
 }
 
 export function MonthlyPLTable({ data, mode, onToggleMode }: MonthlyPLTableProps) {

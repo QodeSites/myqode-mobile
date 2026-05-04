@@ -81,7 +81,7 @@ export default function ServicesScreen() {
             ]}
             primaryCTA={{
               label: 'Add Funds / SIP',
-              onPress: () => Alert.alert('Add Funds', 'Please contact your IR team or use the web portal to initiate a fund addition.'),
+              onPress: () => router.push('/(tabs)/invest/add-funds' as any),
             }}
           />
 
@@ -96,7 +96,7 @@ export default function ServicesScreen() {
             ]}
             primaryCTA={{
               label: 'Switch / Reallocate',
-              onPress: () => Alert.alert('Switch Strategy', 'Please contact your IR team to initiate a strategy switch.'),
+              onPress: () => router.push('/(tabs)/invest/add-funds' as any),
             }}
           />
 

@@ -181,19 +181,19 @@ export default function PortfolioScreen() {
               <>
                 <StatCard
                   label="Amount Invested"
-                  value={perf?.amountInvested ? formatINR(perf.amountInvested, 0) : '—'}
-                  subtitle={perf?.grossValue ? `Gross: ${formatINR(perf.grossValue, 0)}` : 'All time'}
+                  value={perf?.amountInvested ? formatINR(perf.amountInvested) : '—'}
+                  subtitle={perf?.grossValue ? `Gross: ${formatINR(perf.grossValue)}` : 'All time'}
                   icon="save-outline"
                 />
                 <StatCard
                   label="Current Value"
-                  value={perf?.currentValue ? formatINR(perf.currentValue, 0) : '—'}
+                  value={perf?.currentValue ? formatINR(perf.currentValue) : '—'}
                   subtitle={dataAsOf ? `As of ${formatDate(dataAsOf, 'short')}` : 'All time'}
                   icon="cash-outline"
                 />
                 <StatCard
                   label="Total Returns"
-                  value={perf?.totalReturns != null ? formatINR(perf.totalReturns, 0) : '—'}
+                  value={perf?.totalReturns != null ? formatINR(perf.totalReturns) : '—'}
                   subtitle="Absolute returns"
                   icon={
                     perf?.totalReturns != null && perf.totalReturns < 0

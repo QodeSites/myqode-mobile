@@ -7,6 +7,7 @@ import { Colors } from '@/constants/Colors';
 import { Typography, cardShadow } from '@/constants/Typography';
 import { useAuthStore } from '@/store/authStore';
 import { authApi } from '@/api/auth';
+import Constants from 'expo-constants';
 
 type IoniconsName = keyof typeof Ionicons.glyphMap;
 
@@ -201,7 +202,7 @@ export default function MoreScreen() {
           )}
         </TouchableOpacity>
 
-        <Text style={styles.version}>myQode v1.0</Text>
+        <Text style={styles.version}>myQode v{Constants.expoConfig?.version ?? '1.0'}</Text>
       </ScrollView>
     </SafeAreaView>
   );

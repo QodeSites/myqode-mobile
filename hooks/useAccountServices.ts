@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   servicesApi,
-  AddFundsPayload,
   SwitchPayload,
   SetupSipPayload,
   SipActionPayload,
@@ -28,17 +27,6 @@ export function useBankDetails() {
     queryKey: ['services', 'bank-details'],
     queryFn: servicesApi.getBankDetails,
     staleTime: 60 * 60 * 1000,
-  });
-}
-
-export function useAddFunds() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (payload: AddFundsPayload) => servicesApi.addFunds(payload),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['services', 'transactions'] });
-    },
   });
 }
 
@@ -72,6 +60,7 @@ export function usePauseResumeSip() {
     mutationFn: (payload: SipActionPayload) => servicesApi.pauseResumeSip(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['services', 'transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['payments', 'investment-status'] });
     },
   });
 }
@@ -83,6 +72,7 @@ export function useCancelSip() {
     mutationFn: (payload: CancelSipPayload) => servicesApi.cancelSip(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['services', 'transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['payments', 'investment-status'] });
     },
   });
 }

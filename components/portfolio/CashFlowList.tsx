@@ -3,8 +3,9 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { CashFlowItem } from '@/api/portfolio';
-import { formatINR } from '@/utils/formatCurrency';
+import { formatINR, formatShortINR } from '@/utils/formatCurrency';
 import { formatDate } from '@/utils/formatDate';
+import { AutoShrinkText } from '@/components/ui/AutoShrinkText';
 
 interface CashFlowListProps {
   data: CashFlowItem[];
@@ -33,9 +34,9 @@ function CashFlowRow({ item, isLast }: { item: CashFlowItem; isLast: boolean }) 
             </Text>
           </View>
         </View>
-        <Text style={[styles.amount, { color }]}>
-          {isInflow ? '+' : '−'}{formatINR(Math.abs(item.amount))}
-        </Text>
+        <AutoShrinkText style={[styles.amount, { color }]} minimumFontScale={0.7}>
+          {`${isInflow ? '+' : '−'}${formatINR(Math.abs(item.amount))}`}
+        </AutoShrinkText>
       </View>
     </View>
   );
@@ -55,24 +56,33 @@ export function CashFlowList({ data }: CashFlowListProps) {
       {/* Summary bar */}
       <View style={styles.summary}>
         <View style={styles.summaryItem}>
-          <Text style={styles.summaryLabel}>Total Inflow</Text>
-          <Text style={[styles.summaryValue, { color: Colors.positive }]}>
-            +{formatINR(totalInflow)}
-          </Text>
+          <Text style={styles.summaryLabel} numberOfLines={1}>Total Inflow</Text>
+          <AutoShrinkText
+            style={[styles.summaryValue, { color: Colors.positive }]}
+            minimumFontScale={0.6}
+          >
+            {`+${formatShortINR(totalInflow)}`}
+          </AutoShrinkText>
         </View>
         <View style={styles.summaryDivider} />
         <View style={styles.summaryItem}>
-          <Text style={styles.summaryLabel}>Total Outflow</Text>
-          <Text style={[styles.summaryValue, { color: Colors.negative }]}>
-            −{formatINR(Math.abs(totalOutflow))}
-          </Text>
+          <Text style={styles.summaryLabel} numberOfLines={1}>Total Outflow</Text>
+          <AutoShrinkText
+            style={[styles.summaryValue, { color: Colors.negative }]}
+            minimumFontScale={0.6}
+          >
+            {`−${formatShortINR(Math.abs(totalOutflow))}`}
+          </AutoShrinkText>
         </View>
         <View style={styles.summaryDivider} />
         <View style={styles.summaryItem}>
-          <Text style={styles.summaryLabel}>Net</Text>
-          <Text style={[styles.summaryValue, { color: net >= 0 ? Colors.positive : Colors.negative }]}>
-            {net >= 0 ? '+' : '−'}{formatINR(Math.abs(net))}
-          </Text>
+          <Text style={styles.summaryLabel} numberOfLines={1}>Net</Text>
+          <AutoShrinkText
+            style={[styles.summaryValue, { color: net >= 0 ? Colors.positive : Colors.negative }]}
+            minimumFontScale={0.6}
+          >
+            {`${net >= 0 ? '+' : '−'}${formatShortINR(Math.abs(net))}`}
+          </AutoShrinkText>
         </View>
       </View>
 
@@ -102,6 +112,7 @@ const styles = StyleSheet.create({
   },
   summaryItem: {
     flex: 1,
+    minWidth: 0,       // prevents flex children from overflowing their column
     alignItems: 'center',
     gap: 4,
   },

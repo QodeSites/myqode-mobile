@@ -44,7 +44,11 @@ export const STRATEGY_LABELS: Record<string, string> = {
   family: 'Entire Family',
 };
 
-const STRATEGY_PREFIXES = ['QAW', 'QTF', 'QGF'];
+// Strategy account codes follow `Q` + 2 letters (QAW, QTF, QGF, QLF, ...).
+// Matching the pattern (rather than an explicit whitelist) means a new
+// strategy launched on the backend shows up here without a code change.
+const STRATEGY_PREFIX_PATTERN = /^Q[A-Z]{2}$/;
+const isStrategyPrefix = (prefix: string) => STRATEGY_PREFIX_PATTERN.test(prefix);
 
 interface Option {
   key: string;
@@ -100,7 +104,7 @@ export function StrategySelector() {
     // key may be 'QGF', 'QGF:OWN-A', etc — extract the prefix part
     const prefix = key.split(':')[0];
     return (
-      STRATEGY_PREFIXES.includes(prefix) &&
+      isStrategyPrefix(prefix) &&
       (closedFromSnapshot.has(prefix as StrategyKey) ||
         learnedClosed.current.has(prefix as StrategyKey))
     );
@@ -132,7 +136,7 @@ export function StrategySelector() {
       // don't pollute the selector — clients shouldn't be navigating to dead accounts.
       const isStrategyAccount = (a: any) => {
         const pfx = getPrefix(a);
-        return STRATEGY_PREFIXES.includes(pfx) && !a.isClosed && a.status !== 'closed';
+        return isStrategyPrefix(pfx) && !a.isClosed && a.status !== 'closed';
       };
 
       // "All Strategies (Name)" per owner — only if >1 strategy account for that owner
@@ -184,9 +188,7 @@ export function StrategySelector() {
       }
     } else {
       // ── Fallback: snapshot not yet loaded, build from accountCodes ────────
-      const codes = (user?.accountCodes ?? []).filter((c) =>
-        STRATEGY_PREFIXES.some((p) => c.toUpperCase().startsWith(p))
-      );
+      const codes = (user?.accountCodes ?? []).filter((c) => isStrategyPrefix(c.slice(0, 3).toUpperCase()));
 
       // "All Strategies" aggregate for single investor with multiple strategies
       if (!isHeadOfFamily && codes.length > 1) {
@@ -250,7 +252,7 @@ export function StrategySelector() {
       return 'All';
     }
     const prefix = active.accountId.slice(0, 3).toUpperCase();
-    return STRATEGY_PREFIXES.includes(prefix) ? prefix : active.label.slice(0, 4);
+    return isStrategyPrefix(prefix) ? prefix : active.label.slice(0, 4);
   }, [activeKey, options, multipleOwners]);
 
   const handleSelect = (opt: Option) => {

@@ -11,13 +11,31 @@ const STRATEGY_THEME: Record<string, { color: string; accent: string }> = {
   QGF: { color: Colors.strategyQGF, accent: Colors.strategyQGFAccent },
 };
 
+// Deterministic fallback palette for strategy codes that don't have a
+// hand-picked theme yet (e.g. a newly launched strategy) — keeps each
+// unknown code visually distinct instead of collapsing them all into the
+// same generic color.
+const FALLBACK_PALETTE: { color: string; accent: string }[] = [
+  { color: '#6D4C41', accent: '#3E2723' },
+  { color: '#4527A0', accent: '#2A1858' },
+  { color: '#00695C', accent: '#003D33' },
+  { color: '#AD1457', accent: '#650E36' },
+];
+
+function themeForStrategy(id: string): { color: string; accent: string } {
+  if (STRATEGY_THEME[id]) return STRATEGY_THEME[id];
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) >>> 0;
+  return FALLBACK_PALETTE[hash % FALLBACK_PALETTE.length];
+}
+
 interface StrategyCardProps {
   strategy: Strategy;
   onPress?: (id: string) => void;
 }
 
 export function StrategyCard({ strategy, onPress }: StrategyCardProps) {
-  const theme = STRATEGY_THEME[strategy.id] ?? { color: Colors.primaryDark, accent: Colors.primaryMid };
+  const theme = themeForStrategy(strategy.id);
 
   return (
     <TouchableOpacity

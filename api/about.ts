@@ -14,7 +14,9 @@ export interface TeamMember {
 }
 
 export interface Strategy {
-  id: 'QAW' | 'QTF' | 'QGF';
+  // Widened from a closed union so a new strategy code returned by the API
+  // (e.g. 'QLF') doesn't need a type update here to type-check.
+  id: string;
   name: string;
   fullName: string;
   description: string;

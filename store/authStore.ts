@@ -3,16 +3,22 @@ import { User } from '@/api/auth';
 import * as SecureStore from 'expo-secure-store';
 import { IMPERSONATION_TOKEN_KEY } from '@/api/client';
 
-export type StrategyKey = 'all' | 'QAW' | 'QTF' | 'QGF' | 'owner' | 'family';
+// Any key other than the reserved aggregate scopes is a live strategy prefix
+// (e.g. 'QAW', 'QGF', or a future one like 'QLF') — kept as `string` so new
+// strategies introduced by the backend work without a code change here.
+export type StrategyKey = string;
 
-const STRATEGY_PREFIXES = ['QAW', 'QTF', 'QGF'];
+// Strategy account codes follow `Q` + 2 letters (e.g. QAW, QTF, QGF, QLF...).
+// Matching the pattern instead of an explicit whitelist means a new strategy
+// launched on the backend is recognized automatically.
+const STRATEGY_PREFIX_PATTERN = /^Q[A-Z]{2}/i;
 
 export function strategyFromAccountId(accountId: string | null): StrategyKey {
   if (!accountId) return 'all';
   if (/^OWN/i.test(accountId)) return 'owner';
   if (/^GRP/i.test(accountId)) return 'family';
   const prefix = accountId.slice(0, 3).toUpperCase();
-  if (STRATEGY_PREFIXES.includes(prefix)) return prefix as StrategyKey;
+  if (STRATEGY_PREFIX_PATTERN.test(prefix)) return prefix;
   // Numeric owner IDs (e.g. '50602') — not a strategy prefix, not OWN/GRP
   if (/^\d/.test(accountId)) return 'owner';
   return 'all';
@@ -21,13 +27,11 @@ export function strategyFromAccountId(accountId: string | null): StrategyKey {
 function defaultAccountId(accountCodes: string[]): string | null {
   if (!accountCodes.length) return null;
 
-  const strategyCodes = accountCodes.filter((c) =>
-    STRATEGY_PREFIXES.some((p) => c.toUpperCase().startsWith(p))
-  );
+  const strategyCodes = accountCodes.filter((c) => STRATEGY_PREFIX_PATTERN.test(c));
   // Owner IDs are numeric strings added by the login route (ownerid from DB).
   // They are neither strategy prefixes nor GRP group codes.
   const ownerCodes = accountCodes.filter(
-    (c) => !STRATEGY_PREFIXES.some((p) => c.toUpperCase().startsWith(p)) && !/^GRP/i.test(c)
+    (c) => !STRATEGY_PREFIX_PATTERN.test(c) && !/^GRP/i.test(c)
   );
 
   // Multiple strategy accounts → default to the owner aggregate so the user
@@ -45,7 +49,7 @@ function accountIdForStrategy(strategy: StrategyKey, accountCodes: string[]): st
   if (strategy === 'family') return accountCodes.find((c) => /^GRP/i.test(c)) ?? null;
   if (strategy === 'all') return defaultAccountId(accountCodes);
   // Only return an individual strategy account — never fall back to an OWN/GRP aggregate
-  return accountCodes.find((id) => id.toUpperCase().startsWith(strategy)) ?? null;
+  return accountCodes.find((id) => id.toUpperCase().startsWith(strategy.toUpperCase())) ?? null;
 }
 
 interface AuthState {

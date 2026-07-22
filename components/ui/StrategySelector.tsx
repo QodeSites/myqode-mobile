@@ -40,12 +40,11 @@ export const STRATEGY_LABELS: Record<string, string> = {
   QAW:    'Qode All Weather',
   QTF:    'Qode Tactical Fund',
   QGF:    'Qode Growth Fund',
-  QFH:    'Qode Future Horizon',
   owner:  'All My Accounts',
   family: 'Entire Family',
 };
 
-const STRATEGY_PREFIXES = ['QAW', 'QTF', 'QGF', 'QFH'];
+const STRATEGY_PREFIXES = ['QAW', 'QTF', 'QGF'];
 
 interface Option {
   key: string;

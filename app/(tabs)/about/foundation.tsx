@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import React, { useCallback, useState } from 'react';
+import { View, Text, ScrollView, StyleSheet, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
@@ -8,17 +8,34 @@ import { useQuery } from '@tanstack/react-query';
 import { aboutApi } from '@/api/about';
 
 export default function FoundationScreen() {
-  const { data } = useQuery({
+  const { data, refetch } = useQuery({
     queryKey: ['about', 'team'],
     queryFn: aboutApi.getTeam,
     staleTime: 30 * 60 * 1000,
   });
 
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await refetch();
+    setRefreshing(false);
+  }, [refetch]);
+
   const fundManagers = data?.filter((m) => m.type === 'fund_manager') ?? [];
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={Colors.accentGreen}
+            colors={[Colors.accentGreen]}
+          />
+        }
+      >
         <View style={styles.header}>
           <Text style={styles.title}>Fund Managers</Text>
           <Text style={styles.subtitle}>The minds behind Qode's investment strategies</Text>

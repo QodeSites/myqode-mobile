@@ -1,0 +1,28 @@
+{
+  "_comment": "PLACEHOLDER Firebase config — REPLACE before shipping. Download the real google-services.json from Firebase console → Project settings → Your apps → Android app (com.qodeinvest.myqode). This placeholder lets the Android build complete; Firebase Analytics will be inert until the real file is in place.",
+  "project_info": {
+    "project_number": "000000000000",
+    "project_id": "myqode-placeholder",
+    "storage_bucket": "myqode-placeholder.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:000000000000:android:0000000000000000000000",
+        "android_client_info": {
+          "package_name": "com.qodeinvest.myqode"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        { "current_key": "AIzaSyDummyKeyForLocalBuilds00000000000" }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

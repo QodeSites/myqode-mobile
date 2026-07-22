@@ -15,7 +15,7 @@ const PHILOSOPHY_CARDS = [
   },
   {
     title: 'What We Do',
-    body: 'We manage client portfolios across four distinct strategies — QAW, QTF, QGF, and QFH — each designed to capture specific market opportunities. Our approach is disciplined, transparent, and built on decades of historical market data.',
+    body: 'We manage client portfolios across three distinct strategies — QAW, QTF, and QGF — each designed to capture specific market opportunities. Our approach is disciplined, transparent, and built on decades of historical market data.',
     icon: 'bar-chart-outline' as const,
   },
   {

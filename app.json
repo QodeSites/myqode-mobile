@@ -2,7 +2,7 @@
   "expo": {
     "name": "myQode",
     "slug": "myqode",
-    "version": "1.1.10",
+    "version": "1.2.5",
     "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -19,6 +19,7 @@
       "bundleIdentifier": "com.qodeinvest.myqode",
       "deploymentTarget": "15.1",
       "buildNumber": "9",
+      "googleServicesFile": "./GoogleService-Info.plist",
       "splash": {
         "image": "./assets/splash.png",
         "resizeMode": "cover",
@@ -27,6 +28,7 @@
       "infoPlist": {
         "NSCameraUsageDescription": "Used for document scanning",
         "NSPhotoLibraryUsageDescription": "Used to save documents",
+        "NSFaceIDUsageDescription": "Use Face ID to securely unlock your myQode portfolio.",
         "ITSAppUsesNonExemptEncryption": false
       }
     },
@@ -43,6 +45,7 @@
       },
       "package": "com.qodeinvest.myqode",
       "versionCode": 9,
+      "googleServicesFile": "./google-services.json",
       "edgeToEdge": true,
       "permissions": [
         "READ_EXTERNAL_STORAGE",
@@ -59,12 +62,20 @@
       "expo-router",
       "expo-secure-store",
       [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Use Face ID to securely unlock your myQode portfolio."
+        }
+      ],
+      [
         "expo-notifications",
         {
           "icon": "./assets/notification-icon.png",
           "color": "#1A3D2B"
         }
-      ]
+      ],
+      "@react-native-firebase/app",
+      "./plugins/withPodfileFixes"
     ],
     "experiments": {
       "typedRoutes": true

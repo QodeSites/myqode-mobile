@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { View, AppState, AppStateStatus, Alert } from 'react-native';
+import { View, AppState, AppStateStatus } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -20,10 +20,10 @@ import {
 } from '@expo-google-fonts/playfair-display';
 import { useAuthStore } from '@/store/authStore';
 import { authApi } from '@/api/auth';
-import { paymentsApi } from '@/api/payments';
+import { getCanLockDevice } from '@/utils/biometrics';
 import { ImpersonationBanner } from '@/components/ui/ImpersonationBanner';
+import { LockScreen } from '@/components/ui/LockScreen';
 import { ForceUpdateModal } from '@/components/ui/ForceUpdateModal';
-import { registerCashfreeCallback, getPendingSipId, setPendingSipId } from '@/hooks/useCashfreePayment';
 import { Analytics } from '@/utils/analytics';
 import { API_BASE_URL, ENDPOINTS } from '@/constants/Api';
 import { registerForPushNotifications } from '@/utils/pushNotifications';
@@ -79,6 +79,10 @@ export default function RootLayout() {
   const isHydrated = useAuthStore((s) => s.isHydrated);
   const isImpersonating = useAuthStore((s) => s.isImpersonating);
   const user = useAuthStore((s) => s.user);
+  const setBiometricCapable = useAuthStore((s) => s.setBiometricCapable);
+  const lock = useAuthStore((s) => s.lock);
+  const isLocked = useAuthStore((s) => s.isLocked);
+  const token = useAuthStore((s) => s.token);
 
   // ── Force-update state ────────────────────────────────────────────────────
   const [updateInfo, setUpdateInfo] = useState<AppVersionInfo | null>(null);
@@ -92,6 +96,12 @@ export default function RootLayout() {
         // impersonation state is in-memory only and cannot be restored across restarts
         await SecureStore.deleteItemAsync(IMPERSONATION_TOKEN_KEY);
 
+        // Detect whether this device can lock (biometric or passcode enrolled).
+        // Stored regardless of login state so background-locking works on the
+        // very first session after a fresh login too.
+        const canLock = await getCanLockDevice();
+        setBiometricCapable(canLock);
+
         // Load token and cached user in parallel — no network request yet
         const [token, cachedUser] = await Promise.all([
           authApi.getToken(),
@@ -101,6 +111,10 @@ export default function RootLayout() {
         if (!token) return; // not logged in
 
         setToken(token);
+
+        // A persisted session exists — require biometric unlock before revealing
+        // the portfolio. The LockScreen overlay handles the prompt + fallbacks.
+        if (canLock) lock();
 
         // Restore cached user immediately so strategies/name appear instantly
         if (cachedUser) {
@@ -167,63 +181,6 @@ export default function RootLayout() {
     checkAppVersion();
   }, []);
 
-  // Register global Cashfree SDK callback once on mount.
-  // The same callback fires for both one-time payments AND SIP mandate authorisations.
-  // We distinguish them via getPendingSipId() — set by launchSipMandate before the SDK opens.
-  useEffect(() => {
-    registerCashfreeCallback(
-      async (callbackId) => {
-        const pendingSipId = getPendingSipId();
-        const isSip = !!pendingSipId && pendingSipId === callbackId;
-
-        if (isSip) {
-          // ── SIP mandate completed ──────────────────────────────────────────
-          setPendingSipId(null);
-          try {
-            await paymentsApi.verifySip(callbackId);
-          } catch {
-            // verify-sip failed — the webhook will eventually sync the status.
-          }
-          queryClient.invalidateQueries({ queryKey: ['payments', 'investment-status'] });
-          queryClient.invalidateQueries({ queryKey: ['services', 'transactions'] });
-          // Navigate to SIP Management so the user can see the new SIP status.
-          router.replace('/(tabs)/invest/sip-management' as any);
-        } else {
-          // ── One-time / new-strategy payment completed ──────────────────────
-          try {
-            await paymentsApi.verifyOrder(callbackId);
-          } catch {
-            // Verify failed — payment may still have succeeded; user can pull-to-refresh.
-          }
-          queryClient.invalidateQueries({ queryKey: ['payments', 'investment-status'] });
-          queryClient.invalidateQueries({ queryKey: ['services', 'transactions'] });
-          // Navigate to Orders so the user can see the new order status.
-          router.replace('/(tabs)/invest' as any);
-        }
-      },
-      (_error, callbackId) => {
-        const pendingSipId = getPendingSipId();
-        const isSip = !!pendingSipId && pendingSipId === callbackId;
-        if (isSip) setPendingSipId(null);
-
-        Alert.alert(
-          isSip ? 'SIP Setup Not Completed' : 'Payment Not Completed',
-          isSip
-            ? `The mandate authorisation was not completed. You can retry from the SIPs screen.`
-            : `Your payment for order ${callbackId} was not completed. You can retry from the Invest screen.`,
-          [{ text: 'OK' }],
-        );
-        // Navigate away so the add-funds screen unmounts and isProcessing resets,
-        // allowing the user to retry without getting stuck on a disabled button.
-        if (isSip) {
-          router.replace('/(tabs)/invest/sip-management' as any);
-        } else {
-          router.replace('/(tabs)/invest' as any);
-        }
-      },
-    );
-  }, []);
-
   // Route super admin to admin screen on first login only
   const hasRedirectedAdmin = useRef(false);
   useEffect(() => {
@@ -242,6 +199,14 @@ export default function RootLayout() {
       if (nextState === 'background' || nextState === 'inactive') {
         // Flush any pending analytics events before going to background
         Analytics.flush();
+
+        // Require biometric re-unlock when the app returns to the foreground.
+        // Set on leaving the foreground so the LockScreen also covers the
+        // app-switcher snapshot (privacy). lock() is a no-op without a session.
+        const { token: t, biometricCapable } = useAuthStore.getState();
+        if (t && biometricCapable) {
+          useAuthStore.getState().lock();
+        }
 
         // Security: clear impersonation so device hand-off is safe
         try {
@@ -284,6 +249,15 @@ export default function RootLayout() {
                     <Stack.Screen name="(auth)" />
                     <Stack.Screen name="(tabs)" />
                     <Stack.Screen name="(admin)" />
+                    <Stack.Screen
+                      name="payment-checkout"
+                      options={{
+                        presentation: 'modal',
+                        headerShown: true,
+                        title: 'Payment',
+                        gestureEnabled: false,
+                      }}
+                    />
                   </Stack>
                 </SafeAreaInsetsContext.Provider>
               )}
@@ -303,6 +277,10 @@ export default function RootLayout() {
               onDismiss={isForceUpdate ? undefined : () => setUpdateModalVisible(false)}
             />
           )}
+
+          {/* Biometric app-lock — overlays everything (including modals/banner)
+              whenever a persisted session must be unlocked with Face ID / Touch ID. */}
+          {isLocked && token && <LockScreen />}
         </QueryClientProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

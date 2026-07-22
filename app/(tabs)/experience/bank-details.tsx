@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -56,6 +57,13 @@ function DetailField({
 export default function BankDetailsScreen() {
   const { data, isLoading, isError, refetch } = useBankDetails();
 
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await refetch();
+    setRefreshing(false);
+  }, [refetch]);
+
   const handleCopyAll = () => {
     if (!data) return;
     const text = data.copyText ?? [
@@ -79,7 +87,18 @@ export default function BankDetailsScreen() {
         <View style={{ width: 38 }} />
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scroll}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={Colors.accentGreen}
+            colors={[Colors.accentGreen]}
+          />
+        }
+      >
         {isLoading && (
           <View style={styles.center}>
             <ActivityIndicator color={Colors.accentGreen} />

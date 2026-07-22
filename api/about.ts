@@ -14,7 +14,7 @@ export interface TeamMember {
 }
 
 export interface Strategy {
-  id: 'QAW' | 'QTF' | 'QGF' | 'QFH';
+  id: 'QAW' | 'QTF' | 'QGF';
   name: string;
   fullName: string;
   description: string;

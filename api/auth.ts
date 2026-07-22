@@ -1,6 +1,7 @@
 import apiClient, { TOKEN_KEY, IMPERSONATION_TOKEN_KEY } from './client';
 import { ENDPOINTS } from '@/constants/Api';
 import * as SecureStore from 'expo-secure-store';
+import { Platform } from 'react-native';
 
 export interface LoginPayload {
   email: string;
@@ -29,8 +30,14 @@ export interface LoginResponse {
 const USER_CACHE_KEY = 'myqode_user_cache';
 
 export const authApi = {
-  checkIdentifier: async (identifier: string): Promise<{ exists: boolean }> => {
-    const res = await apiClient.post<{ exists: boolean }>(ENDPOINTS.CHECK_IDENTIFIER, { identifier }, { timeout: 5000 });
+  checkIdentifier: async (
+    identifier: string
+  ): Promise<{ exists: boolean; requiresSetup?: boolean; email?: string }> => {
+    const res = await apiClient.post<{ exists: boolean; requiresSetup?: boolean; email?: string }>(
+      ENDPOINTS.CHECK_IDENTIFIER,
+      { identifier },
+      { timeout: 5000 }
+    );
     return res.data;
   },
 
@@ -43,8 +50,51 @@ export const authApi = {
     return res.data;
   },
 
+  // First-time password setup (OTP based) — for new users still on the default password.
+  sendSetupOtp: async (
+    email: string
+  ): Promise<{ success: boolean; message: string; clientname?: string }> => {
+    const res = await apiClient.post<{ success: boolean; message: string; clientname?: string }>(
+      ENDPOINTS.SEND_SETUP_OTP,
+      { email: email.trim().toLowerCase() },
+      { timeout: 15_000 }
+    );
+    return res.data;
+  },
+
+  verifySetupOtp: async (
+    email: string,
+    otp: string
+  ): Promise<{ success: boolean; message: string; clientname?: string }> => {
+    const res = await apiClient.post<{ success: boolean; message: string; clientname?: string }>(
+      ENDPOINTS.VERIFY_SETUP_OTP,
+      { email: email.trim().toLowerCase(), otp: otp.trim() },
+      { timeout: 10_000 }
+    );
+    return res.data;
+  },
+
+  completeSetup: async (
+    email: string,
+    otp: string,
+    newPassword: string,
+    confirmPassword: string
+  ): Promise<{ success: boolean; message: string; accountsUpdated?: number }> => {
+    const res = await apiClient.post<{ success: boolean; message: string; accountsUpdated?: number }>(
+      ENDPOINTS.COMPLETE_SETUP_OTP,
+      { email: email.trim().toLowerCase(), otp: otp.trim(), newPassword, confirmPassword },
+      { timeout: 15_000 }
+    );
+    return res.data;
+  },
+
   login: async (payload: LoginPayload): Promise<LoginResponse> => {
-    const res = await apiClient.post<LoginResponse>(ENDPOINTS.LOGIN, payload);
+    // Platform.OS lets the backend split app logins by iOS vs Android
+    // (previously only tracked as a combined "app" bucket).
+    const res = await apiClient.post<LoginResponse>(ENDPOINTS.LOGIN, {
+      ...payload,
+      platform: Platform.OS,
+    });
     return res.data;
   },
 

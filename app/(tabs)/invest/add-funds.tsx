@@ -38,12 +38,11 @@ const TABS: { key: Tab; label: string }[] = [
 ];
 
 const QUICK_AMOUNTS = [50000, 100000, 250000, 500000];
-const STRATEGIES = ['QAW', 'QTF', 'QGF', 'QFH'] as const;
+const STRATEGIES = ['QAW', 'QTF', 'QGF'] as const;
 const STRATEGY_NAMES: Record<string, string> = {
   QAW: 'All Weather',
   QTF: 'Tactical Fund',
   QGF: 'Growth Fund',
-  QFH: 'Future Horizon',
 };
 const FREQUENCIES = ['monthly', 'quarterly', 'yearly', 'weekly', 'daily'] as const;
 
@@ -155,7 +154,13 @@ function OneTimeTab({
           placeholderTextColor={Colors.textSecondary}
           keyboardType="numeric"
         />
-        <Text style={styles.hint}>Minimum: ₹100</Text>
+        {orderType === 'ONE_TIME' ? (
+          <Text style={styles.transferNote}>
+            The transfer facility supports transactions from ₹100 onwards. For Qode PMS accounts, top-up investments are generally made in amounts of ₹1,00,000 or more, helping ensure efficient portfolio deployment and administration.
+          </Text>
+        ) : (
+          <Text style={styles.hint}>Minimum: ₹100</Text>
+        )}
       </View>
 
       <View style={styles.quickAmounts}>
@@ -281,7 +286,9 @@ function SipTab() {
           placeholderTextColor={Colors.textSecondary}
           keyboardType="numeric"
         />
-        <Text style={styles.hint}>Minimum: ₹100</Text>
+        <Text style={styles.transferNote}>
+          The transfer facility supports transactions from ₹100 onwards. For Qode PMS accounts, top-up investments are generally made in amounts of ₹1,00,000 or more, helping ensure efficient portfolio deployment and administration.
+        </Text>
       </View>
 
       <View style={styles.fieldBlock}>
@@ -635,7 +642,7 @@ function WithdrawalTab() {
   );
 }
 
-const INDIVIDUAL_STRATEGIES = ['QAW', 'QTF', 'QGF', 'QFH'];
+const INDIVIDUAL_STRATEGIES = ['QAW', 'QTF', 'QGF'];
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 export default function AddFundsScreen() {
@@ -769,6 +776,7 @@ const styles = StyleSheet.create({
   },
   textarea: { minHeight: 80, paddingTop: 12 },
   hint: { ...Typography.Caption, color: Colors.textSecondary },
+  transferNote: { ...Typography.Caption, color: Colors.textSecondary, lineHeight: 18, marginBottom: 16 },
   quickAmounts: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
   quickBtn: {
     backgroundColor: Colors.surface,

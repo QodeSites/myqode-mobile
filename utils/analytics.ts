@@ -11,12 +11,72 @@
  *   import { Analytics } from '@/utils/analytics';
  *   Analytics.identify('client-id-123');          // call after login
  *   Analytics.screen('Portfolio');                 // on every screen mount
- *   Analytics.event('strategy_changed', { from: 'QAW', to: 'QFH' });
+ *   Analytics.event('strategy_changed', { from: 'QAW', to: 'QGF' });
  *   Analytics.reset();                             // call on logout
  */
 
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
+
+// ── Firebase Analytics dual-write ─────────────────────────────────────────────
+// Every Analytics.screen / Analytics.event / Analytics.error / Analytics.identify
+// call also forwards to Firebase Analytics (in addition to the in-house backend).
+// All Firebase calls are wrapped so a Firebase failure can never break the
+// in-house tracking path.
+//
+// Requires (for the Firebase path to actually emit):
+//   - @react-native-firebase/app + @react-native-firebase/analytics installed
+//   - GoogleService-Info.plist (iOS) and google-services.json (Android)
+//   - A custom dev/prod build (EAS) — Firebase native modules are NOT linked in
+//     Expo Go, so importing the module there throws at load time.
+//
+// We therefore resolve the module LAZILY and guard it: in Expo Go (or any build
+// missing the native module) every Firebase call silently no-ops, while real
+// builds get full Firebase Analytics.
+
+// Expo Go reports executionEnvironment === 'storeClient'.
+const IS_EXPO_GO = Constants.executionEnvironment === 'storeClient';
+
+// undefined = not yet resolved, null = unavailable, fn = the analytics() factory
+let _fbAnalytics: (() => any) | null | undefined;
+
+function getFirebaseAnalytics(): (() => any) | null {
+  if (_fbAnalytics !== undefined) return _fbAnalytics;
+  if (IS_EXPO_GO) {
+    _fbAnalytics = null;
+    return null;
+  }
+  try {
+    // Lazy require so a missing native module can't crash module load.
+    _fbAnalytics = require('@react-native-firebase/analytics').default;
+  } catch {
+    _fbAnalytics = null;
+  }
+  return _fbAnalytics ?? null;
+}
+
+function fbSafe(fn: (analytics: () => any) => Promise<unknown>) {
+  // Fire-and-forget; never await, never throw.
+  const analytics = getFirebaseAnalytics();
+  if (!analytics) return;
+  try {
+    fn(analytics).catch(() => {});
+  } catch {
+    // synchronous throw from the native layer — ignore
+  }
+}
+
+function flattenForFirebase(
+  props: Record<string, string | number | boolean | null> | undefined
+): Record<string, string | number> {
+  const out: Record<string, string | number> = {}
+  if (!props) return out
+  for (const [k, v] of Object.entries(props)) {
+    if (v === null || v === undefined) continue
+    out[k] = typeof v === 'boolean' ? (v ? 1 : 0) : v
+  }
+  return out
+}
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -153,6 +213,8 @@ export const Analytics = {
    */
   identify(userId: string) {
     _userId = userId;
+    fbSafe((analytics) => analytics().setUserId(userId));
+    fbSafe((analytics) => analytics().setUserProperties({ app_platform: PLATFORM }));
   },
 
   /**
@@ -160,6 +222,16 @@ export const Analytics = {
    */
   screen(screenName: string, properties?: Record<string, string | number | boolean | null>) {
     enqueue(buildEvent('screen', screenName, properties));
+    fbSafe((analytics) => analytics().logScreenView({
+      screen_name: screenName,
+      screen_class: screenName,
+    }));
+    fbSafe((analytics) => analytics().logEvent('screen_view', {
+      firebase_screen: screenName,
+      firebase_screen_class: screenName,
+      app_platform: PLATFORM,
+      ...flattenForFirebase(properties),
+    }));
   },
 
   /**
@@ -171,6 +243,10 @@ export const Analytics = {
     properties?: Record<string, string | number | boolean | null>
   ) {
     enqueue(buildEvent('event', eventName, properties));
+    fbSafe((analytics) => analytics().logEvent(eventName, {
+      app_platform: PLATFORM,
+      ...flattenForFirebase(properties),
+    }));
   },
 
   /**
@@ -178,6 +254,11 @@ export const Analytics = {
    */
   error(errorName: string, properties?: Record<string, string | number | boolean | null>) {
     enqueue(buildEvent('error', errorName, properties));
+    fbSafe((analytics) => analytics().logEvent('app_error', {
+      error_name: errorName,
+      app_platform: PLATFORM,
+      ...flattenForFirebase(properties),
+    }));
   },
 
   /**
@@ -188,6 +269,7 @@ export const Analytics = {
     _userId    = null;
     _sessionId = generateSessionId();
     _token     = null;
+    fbSafe((analytics) => analytics().setUserId(null));
   },
 
   /**

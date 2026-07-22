@@ -12,7 +12,6 @@ module.exports = {
         strategyQAW: '#1A3D2B',
         strategyQTF: '#5C1A1A',
         strategyQGF: '#1A2540',
-        strategyQFH: '#7A7A1A',
         positive: '#16A34A',
         negative: '#DC2626',
         background: '#EDE8DC',

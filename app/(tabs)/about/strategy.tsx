@@ -33,14 +33,6 @@ const FALLBACK_STRATEGIES: Strategy[] = [
     tags: ['Quantitative Strategy', 'Small Cap Focused', 'Multifactor Model', 'Growth Investing'],
     colorKey: 'strategyQGF',
   },
-  {
-    id: 'QFH',
-    name: 'QFH™',
-    fullName: 'Qode Future Horizons',
-    description: 'Targets high-growth, under-researched small/micro-cap companies.',
-    tags: ['Quantamental', 'Multi-bagger', 'Concentrated', 'Uncharted'],
-    colorKey: 'strategyQFH',
-  },
 ];
 
 export default function StrategyScreen() {

@@ -103,9 +103,18 @@ export default function LoginScreen() {
     setIdentifierNotFound(false);
     setChecking(true);
     try {
-      const { exists } = await authApi.checkIdentifier(identifier.trim());
+      const { exists, requiresSetup, email } = await authApi.checkIdentifier(identifier.trim());
       if (!exists) {
         setIdentifierNotFound(true);
+        return;
+      }
+      // New users still on the default password go straight to setup — skip the
+      // password screen entirely.
+      if (requiresSetup) {
+        router.push({
+          pathname: '/(auth)/setup-password' as any,
+          params: { email: email ?? identifier.trim() },
+        });
         return;
       }
       setModalVisible(true);
@@ -138,6 +147,12 @@ export default function LoginScreen() {
     Linking.openURL(`mailto:investor.relations@qodeinvest.com?subject=${encodeURIComponent(subject)}`);
   };
 
+  const handleSetupPassword = () => {
+    setModalVisible(false);
+    login.reset();
+    router.push({ pathname: '/(auth)/setup-password' as any, params: { email: identifier.trim() } });
+  };
+
   // Resolve a human-readable message from a login mutation error.
   // The API returns { error: string, code: string } — check `code` first for
   // known cases, then fall back to the `error` field, then a generic string.
@@ -146,7 +161,7 @@ export default function LoginScreen() {
     const data = (login.error as any)?.response?.data;
     const code = data?.code as string | undefined;
     if (code === 'PASSWORD_SETUP_REQUIRED')
-      return 'Your account password has not been set up yet. Please contact support to activate your account.';
+      return 'PASSWORD_SETUP_REQUIRED'; // sentinel — rendered as a special block below
     if (code === 'ACCOUNT_CLOSED')
       return 'ACCOUNT_CLOSED'; // sentinel — rendered as a special block below
     if (code === 'USER_NOT_FOUND')
@@ -401,9 +416,25 @@ export default function LoginScreen() {
               </TouchableOpacity>
             </View>
           )}
-          {loginErrorMessage && loginErrorMessage !== 'ACCOUNT_CLOSED' && loginErrorMessage !== 'USER_NOT_FOUND' && (
-            <Text style={styles.errorText}>{loginErrorMessage}</Text>
+          {loginErrorMessage === 'PASSWORD_SETUP_REQUIRED' && (
+            <View style={styles.closedBanner}>
+              <Ionicons name="key-outline" size={20} color={Colors.primaryDark} style={{ marginBottom: 6 }} />
+              <Text style={styles.closedBannerTitle}>Set Up Your Password</Text>
+              <Text style={styles.closedBannerBody}>
+                Your account password hasn't been set up yet. Verify your email with a one-time code and create a password to continue.
+              </Text>
+              <TouchableOpacity onPress={handleSetupPassword} style={styles.contactBtn} activeOpacity={0.8}>
+                <Ionicons name="key-outline" size={14} color={Colors.white} />
+                <Text style={styles.contactBtnText}>Set Up Password</Text>
+              </TouchableOpacity>
+            </View>
           )}
+          {loginErrorMessage &&
+            loginErrorMessage !== 'ACCOUNT_CLOSED' &&
+            loginErrorMessage !== 'USER_NOT_FOUND' &&
+            loginErrorMessage !== 'PASSWORD_SETUP_REQUIRED' && (
+              <Text style={styles.errorText}>{loginErrorMessage}</Text>
+            )}
 
           <TouchableOpacity
             style={[styles.modalSignInBtn, login.isPending && styles.disabledBtn]}
@@ -428,6 +459,14 @@ export default function LoginScreen() {
             activeOpacity={0.7}
           >
             <Text style={styles.forgotText}>Forgot password?</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.forgotBtn}
+            onPress={handleSetupPassword}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.forgotText}>First time here? Set up your password</Text>
           </TouchableOpacity>
 
           <TouchableOpacity

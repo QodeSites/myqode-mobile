@@ -3,9 +3,9 @@ import { User } from '@/api/auth';
 import * as SecureStore from 'expo-secure-store';
 import { IMPERSONATION_TOKEN_KEY } from '@/api/client';
 
-export type StrategyKey = 'all' | 'QAW' | 'QTF' | 'QGF' | 'QFH' | 'owner' | 'family';
+export type StrategyKey = 'all' | 'QAW' | 'QTF' | 'QGF' | 'owner' | 'family';
 
-const STRATEGY_PREFIXES = ['QAW', 'QTF', 'QGF', 'QFH'];
+const STRATEGY_PREFIXES = ['QAW', 'QTF', 'QGF'];
 
 export function strategyFromAccountId(accountId: string | null): StrategyKey {
   if (!accountId) return 'all';
@@ -58,12 +58,19 @@ interface AuthState {
   isImpersonating: boolean;
   adminUser: User | null;
 
+  // App-lock (biometric) state
+  isLocked: boolean;        // true → LockScreen overlay covers the app
+  biometricCapable: boolean; // device can authenticate (biometric or passcode)
+
   setToken: (token: string) => void;
   setUser: (user: User) => void;
   setSelectedAccount: (id: string) => void;
   setScopeOwner: (ownerId: string, accountIds: string[]) => void;
   setSelectedStrategy: (strategy: StrategyKey) => void;
   setHydrated: (value: boolean) => void;
+  setBiometricCapable: (value: boolean) => void;
+  lock: () => void;
+  unlock: () => void;
   logout: () => void;
   startImpersonation: (clientUser: User, impersonationToken: string) => Promise<void>;
   stopImpersonation: () => Promise<void>;
@@ -78,6 +85,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isHydrated: false,
   isImpersonating: false,
   adminUser: null,
+  isLocked: false,
+  biometricCapable: false,
 
   setToken: (token) => set({ token }),
   setUser: (user) => {
@@ -99,6 +108,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ selectedStrategy: strategy, selectedAccountId: accountId, selectedAccountIds: null });
   },
   setHydrated: (value) => set({ isHydrated: value }),
+  setBiometricCapable: (value) => set({ biometricCapable: value }),
+  // Only lock when a session actually exists — locking the login screen makes no sense.
+  // Disabled in development so Expo Go / dev builds don't hit the biometric prompt.
+  lock: () => set((s) => (!__DEV__ && s.token ? { isLocked: true } : {})),
+  unlock: () => set({ isLocked: false }),
   logout: () =>
     set({
       token: null,
@@ -108,6 +122,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       selectedStrategy: 'all',
       isImpersonating: false,
       adminUser: null,
+      isLocked: false,
     }),
 
   startImpersonation: async (clientUser, impersonationToken) => {

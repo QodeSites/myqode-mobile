@@ -10,6 +10,9 @@ export const ENDPOINTS = {
   ME: '/auth/me',
   CHECK_IDENTIFIER: '/auth/check-identifier',
   FORGOT_PASSWORD: '/auth/forgot',
+  SEND_SETUP_OTP: '/auth/send-setup-otp',
+  VERIFY_SETUP_OTP: '/auth/verify-setup-otp',
+  COMPLETE_SETUP_OTP: '/auth/complete-otp-setup',
   DEV_CLIENTS: '/dev/clients',
 
   // Portfolio

@@ -9,8 +9,6 @@ export const Colors = {
   strategyQTFAccent: '#360404',
   strategyQGF: '#0b3452',
   strategyQGFAccent: '#051E31',
-  strategyQFH: '#A78C11',
-  strategyQFHAccent: '#554602',
   positive: '#16A34A',
   negative: '#DC2626',
   background: '#EDE8DC',

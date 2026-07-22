@@ -9,7 +9,6 @@ const STRATEGY_THEME: Record<string, { color: string; accent: string }> = {
   QAW: { color: Colors.strategyQAW, accent: Colors.strategyQAWAccent },
   QTF: { color: Colors.strategyQTF, accent: Colors.strategyQTFAccent },
   QGF: { color: Colors.strategyQGF, accent: Colors.strategyQGFAccent },
-  QFH: { color: Colors.strategyQFH, accent: Colors.strategyQFHAccent },
 };
 
 interface StrategyCardProps {

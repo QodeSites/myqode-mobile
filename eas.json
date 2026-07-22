@@ -37,7 +37,16 @@
     "production": {
       "ios": {
         "appleId": "tech@qodeinvest.com",
-        "appleTeamId": "U3H68NKMV6"
+        "appleTeamId": "U3H68NKMV6",
+        "ascAppId": "6761060137",
+        "bundleIdentifier": "com.qodeinvest.myqode",
+        "ascApiKeyPath": "/Users/qodetech/.appstore/AuthKey_N7HL973J3P.p8",
+        "ascApiKeyId": "N7HL973J3P",
+        "ascApiKeyIssuerId": "5c73af08-bbd7-4821-a387-1660a391a74c"
+      },
+      "android": {
+        "serviceAccountKeyPath": "/Users/qodetech/.gplay/qodepulse-service-account.json",
+        "track": "production"
       }
     }
   }

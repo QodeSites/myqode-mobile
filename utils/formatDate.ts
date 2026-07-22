@@ -15,13 +15,28 @@ const MONTHS_FULL  = ['January', 'February', 'March', 'April', 'May', 'June',
 /** Parse a value into { day, month (0-based), year }, accounting for UTC-midnight offset. */
 function parseDateParts(date: string | Date): { day: number; month: number; year: number } | null {
   if (typeof date === 'string') {
+    const s = date.trim();
     // "YYYY-MM-DD" — parse as local date to avoid UTC offset shifting the day
-    const bare = date.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    const bare = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
     if (bare) {
       return { year: +bare[1], month: +bare[2] - 1, day: +bare[3] };
     }
+    // "06 May 2026" / "6 May, 2026" — the format the API already formats dates into
+    // (toLocaleDateString). Parse it manually: Hermes' Date can't parse non-ISO strings,
+    // so `new Date("06 May 2026")` returns Invalid Date on device and we'd show "-".
+    const dmy = s.match(/^(\d{1,2})[\s-]+([A-Za-z]{3,})\.?,?[\s-]+(\d{4})$/);
+    if (dmy) {
+      const mi = MONTHS_SHORT.findIndex((m) => m.toLowerCase() === dmy[2].slice(0, 3).toLowerCase());
+      if (mi >= 0) return { day: +dmy[1], month: mi, year: +dmy[3] };
+    }
+    // "May 06, 2026" / "May 6 2026" — our own 'medium'/'long' output, parsed back safely
+    const mdy = s.match(/^([A-Za-z]{3,})\.?\s+(\d{1,2}),?\s+(\d{4})$/);
+    if (mdy) {
+      const mi = MONTHS_SHORT.findIndex((m) => m.toLowerCase() === mdy[1].slice(0, 3).toLowerCase());
+      if (mi >= 0) return { day: +mdy[2], month: mi, year: +mdy[3] };
+    }
     // Full ISO string or other format — parse normally (has time component, offset is less of an issue)
-    const d = new Date(date);
+    const d = new Date(s);
     if (isNaN(d.getTime())) return null;
     return { day: d.getDate(), month: d.getMonth(), year: d.getFullYear() };
   }

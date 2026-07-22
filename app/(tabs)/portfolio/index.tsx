@@ -113,9 +113,12 @@ export default function PortfolioScreen() {
 
   const strategyLabel = STRATEGY_LABELS[selectedStrategy] ?? 'All Strategies';
 
-  // Prefer nav series dates (always accurate); fall back to perf fields
   const navSeries = navData.data?.data ?? [];
-  const inceptionDate = navSeries.length > 0 ? navSeries[0].date : perf?.inceptionDate;
+  // Inception must be the account's TRUE inception from the performance API — not
+  // navSeries[0], which is only the start of the selected chart window (default 1Y)
+  // and therefore wrong for any account older than that window.
+  const inceptionDate = perf?.inceptionDate ?? (navSeries.length > 0 ? navSeries[0].date : undefined);
+  // dataAsOf = latest point; the (period-windowed) nav series still ends on it.
   const dataAsOf = navSeries.length > 0 ? navSeries[navSeries.length - 1].date : perf?.dataAsOf;
 
   return (

@@ -5,7 +5,7 @@ export interface CreateOrderPayload {
   accountId: string;
   amount: number;
   orderType: 'ONE_TIME' | 'NEW_STRATEGY';
-  strategyType?: 'QFH' | 'QAW' | 'QTF' | 'QGF';
+  strategyType?: 'QAW' | 'QTF' | 'QGF';
   note?: string;
 }
 

@@ -40,7 +40,7 @@ const DETAILS = [
   { label: 'Reward', value: '0.5% of the referred amount invested (subject to minimum ₹5,000)' },
   {
     label: 'Example',
-    value: 'Referee invests ₹50L → You earn ₹25,000',
+    value: 'Referee invests ₹50L → You earn ₹15,000',
     highlight: true,
   },
   { label: 'Eligibility', value: 'Existing Qode PMS clients who are KYC-compliant' },

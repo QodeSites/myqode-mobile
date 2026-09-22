@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
+import { PrimaryUccBanner } from '@/components/ui/PrimaryUccBanner';
 import { Typography, cardShadow } from '@/constants/Typography';
 import { usePortfolioSnapshot } from '@/hooks/usePortfolio';
 import { SnapshotNode } from '@/api/portfolio';
@@ -279,6 +280,9 @@ export default function SnapshotScreen() {
           />
         }
       >
+        {/* Nuvama WealthSpectrum primary-UCC notice */}
+        <PrimaryUccBanner />
+
         {snapshot.isLoading && (
           <Text style={styles.loadingText}>Loading portfolio data...</Text>
         )}

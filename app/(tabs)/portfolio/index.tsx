@@ -13,6 +13,7 @@ import { useFocusEffect } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
+import { PrimaryUccBanner } from '@/components/ui/PrimaryUccBanner';
 import { Typography } from '@/constants/Typography';
 import { StatCard } from '@/components/ui/StatCard';
 import { CardContainer } from '@/components/ui/CardContainer';
@@ -158,6 +159,11 @@ export default function PortfolioScreen() {
             </View>
           </View>
         </View>
+
+        {/* Nuvama WealthSpectrum primary-UCC notice.
+            Sits AFTER the sticky header — index 0 is pinned by
+            stickyHeaderIndices, so anything placed before it would stick. */}
+        <PrimaryUccBanner />
 
         {/* Closed Account Banner */}
         {isClosed && (

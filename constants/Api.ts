@@ -24,6 +24,9 @@ export const ENDPOINTS = {
   CASHFLOW: '/portfolio/cashflow',
   SNAPSHOT: '/portfolio/snapshot',
 
+  // Primary UCC (Nuvama WealthSpectrum login code)
+  PRIMARY_UCC: '/primary-ucc',
+
   // Services
   TRANSACTIONS: '/services/transactions',
   ADD_FUNDS: '/services/add-funds',

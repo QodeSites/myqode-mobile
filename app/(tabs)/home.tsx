@@ -9,6 +9,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import { AutoShrinkText } from '@/components/ui/AutoShrinkText';
+import { PrimaryUccBanner } from '@/components/ui/PrimaryUccBanner';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -412,6 +413,9 @@ export default function HomeScreen() {
           />
         }
       >
+        {/* Nuvama WealthSpectrum primary-UCC notice */}
+        <PrimaryUccBanner />
+
         {/* Family Total Card */}
         {showFamilyTotal && (
           <View style={styles.familyTotalCard}>

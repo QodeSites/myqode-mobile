@@ -195,7 +195,7 @@ function buildCheckoutHtml(p: {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
   spinner: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#fff',

@@ -59,12 +59,6 @@ export default function LoginScreen() {
     }
   }, [devClients.length]);
 
-  const handleDevLogin = useCallback(async (email: string) => {
-    setDevPickerVisible(false);
-    setDevSearch('');
-    login.mutate({ email, password: '' });
-  }, [login]);
-
   const devFilteredClients = devSearch.trim()
     ? devClients.filter(c =>
         c.name.toLowerCase().includes(devSearch.toLowerCase()) ||
@@ -82,6 +76,12 @@ export default function LoginScreen() {
   }, [modalVisible]);
 
   const login = useLogin();
+
+  const handleDevLogin = useCallback(async (email: string) => {
+    setDevPickerVisible(false);
+    setDevSearch('');
+    login.mutate({ email, password: '' });
+  }, [login]);
 
   // Clear stale errors when the user edits the identifier field.
   useEffect(() => {
@@ -171,7 +171,7 @@ export default function LoginScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-      <StatusBar style="dark" backgroundColor={Colors.background} />
+      <StatusBar style="dark" />
 
       <KeyboardAvoidingView
         style={styles.flex}

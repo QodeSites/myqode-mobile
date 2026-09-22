@@ -6,11 +6,6 @@
     "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "cover",
-      "backgroundColor": "#1A3D2B"
-    },
     "assetBundlePatterns": [
       "**/*"
     ],
@@ -20,11 +15,6 @@
       "deploymentTarget": "15.1",
       "buildNumber": "9",
       "googleServicesFile": "./GoogleService-Info.plist",
-      "splash": {
-        "image": "./assets/splash.png",
-        "resizeMode": "cover",
-        "backgroundColor": "#1A3D2B"
-      },
       "infoPlist": {
         "NSCameraUsageDescription": "Used for document scanning",
         "NSPhotoLibraryUsageDescription": "Used to save documents",
@@ -38,15 +28,9 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#1A3D2B"
       },
-      "splash": {
-        "image": "./assets/splash.png",
-        "resizeMode": "contain",
-        "backgroundColor": "#1A3D2B"
-      },
       "package": "com.qodeinvest.myqode",
       "versionCode": 9,
       "googleServicesFile": "./google-services.json",
-      "edgeToEdge": true,
       "permissions": [
         "READ_EXTERNAL_STORAGE",
         "WRITE_EXTERNAL_STORAGE"
@@ -60,6 +44,18 @@
     "plugins": [
       "expo-dev-client",
       "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash.png",
+          "resizeMode": "cover",
+          "backgroundColor": "#1A3D2B",
+          "enableFullScreenImage_legacy": true,
+          "android": {
+            "resizeMode": "contain"
+          }
+        }
+      ],
       "expo-secure-store",
       [
         "expo-local-authentication",
@@ -80,7 +76,6 @@
     "experiments": {
       "typedRoutes": true
     },
-    "newArchEnabled": true,
     "scheme": "myqode",
     "extra": {
       "router": {},

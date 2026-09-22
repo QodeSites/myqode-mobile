@@ -129,7 +129,7 @@ export function LockScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: Colors.primaryDark,
     alignItems: 'center',
     justifyContent: 'center',
